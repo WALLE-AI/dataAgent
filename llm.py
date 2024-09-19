@@ -120,6 +120,10 @@ class LLMApi():
         )
         return response_dict.to_dict()
 
+
+def model_image_table_format_execute(data_dict, prompt):
+    pass
+
     
     
 if __name__ == "__main__":
