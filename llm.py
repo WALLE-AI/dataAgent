@@ -5,6 +5,7 @@ import os
 import threading
 import httpx
 
+from entities.image_entity import ImageVlmModelOutPut
 from prompt import PROMPT_TEST
 from utils.helper import ddg_search_text
 
@@ -31,9 +32,6 @@ MODEL_NAME_LIST = {
     }
     
 }
-
-
-
 
 
 class LLMApi():
@@ -114,7 +112,13 @@ class LLMApi():
                 stream=stream,
                 temperature=0.2,
             )
-        return llm_response
+        response_dict = ImageVlmModelOutPut(
+            prompt=prompt,
+            model_name=llm_response.model,
+            content=llm_response.choices[0].message.content,
+            total_tokens=llm_response.usage.total_tokens
+        )
+        return response_dict.to_dict()
 
     
     
