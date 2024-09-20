@@ -24,7 +24,8 @@ MODEL_NAME_LIST = {
         "microsoft/phi-3-medium-4k-instruct":"microsoft/phi-3-medium-4k-instruct",
         "meta-llama/llama-3-70b-instruct":"meta-llama/llama-3-70b-instruct",
         "mistralai/mistral-7b-instruct":"mistralai/mistral-7b-instruct",
-        "openai/gpt-4o":"openai/gpt-4o"
+        "openai/gpt-4o":"openai/gpt-4o",
+        "openai/gpt-4o-mini-2024-07-18":"openai/gpt-4o-mini-2024-07-18"
     },
     "siliconflow":{
         "Qwen/Qwen2-7B-Instruct":"Qwen/Qwen2-7B-Instruct",
@@ -82,8 +83,7 @@ class LLMApi():
                     },
                 }
         ]
-        prompt = [{"role":"system","content":"你是一个建筑施工行业资深的质量检查员，你能够高精度判别出施工工地中施工质量风险，请根据用户的场景图片进行高质量的回复,需要重点分析出隐患类别、质量分析、整改要求和法规依据"},
-                  {"role": "user", "content": user_content}]
+        prompt = [{"role": "user", "content": user_content}]
         return prompt
     
     @classmethod
@@ -113,20 +113,20 @@ class LLMApi():
                 temperature=0.2,
             )
         response_dict = ImageVlmModelOutPut(
-            prompt=prompt,
             model_name=llm_response.model,
             content=llm_response.choices[0].message.content,
             total_tokens=llm_response.usage.total_tokens
         )
         return response_dict.to_dict()
+    
+    @classmethod    
+    def get_client(cls,llm_type):
+        return cls().llm_client(llm_type)
 
 
 def model_image_table_format_execute(data_dict, prompt):
-    pass
+     build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])
+     llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="openrouter",model_name="openai/gpt-4o-mini-2024-07-18")
+     llm_result_dict['prompt']=prompt
+     return llm_result_dict
 
-    
-    
-if __name__ == "__main__":
-    result = LLMApi.call_llm("你是谁",llm_type="openrouter",model_name="openai/gpt-4o")
-    result = LLMApi.llm_result_postprocess(result)
-    print(result)
