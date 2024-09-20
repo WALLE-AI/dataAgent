@@ -148,6 +148,7 @@ api/.env
 api/storage/*
 *.png
 *.jpg
+*.json
 
 docker/nginx/conf.d/default.conf
 docker/middleware.env

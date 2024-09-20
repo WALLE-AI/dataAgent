@@ -3,7 +3,7 @@ import json
 
 from entities.image_entity import ImagesConversationData
 from utils.helper import write_json_file_line
-from 
+from tqdm import tqdm
 
 class ImageSFTDatasets():
     def __init__(self):
@@ -21,7 +21,7 @@ class ImageSFTDatasets():
         '''
         sft_dataset_list = []
         with open(file_path, 'r', encoding="utf-8") as file:
-            for line in file:
+            for line in tqdm(file):
                 data = json.loads(line)
                 image_id = data['image_id'].split(".")[0]
                 image_dict = ImagesConversationData(
