@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from entities.image_entity import ImageTableProcess
-from utils.helper import write_json_file
+from utils.helper import download_image, load_images_from_folder, write_json_file
 font = FontProperties(fname=r'/home/dataset-s3-0/gaojing/llm/easy-rag/data/SimHei.ttf')
 
 def plot_quality_data(data,save_image_name):
@@ -27,6 +27,63 @@ def plot_quality_data(data,save_image_name):
     plt.show()
     plt.savefig('data/' + save_image_name+".png")
     
+
+def read_sample_quality_total_data_10000():
+    '''
+    获取随机抽取整个质量库中隐患类别中前top10中每个类别的10000条
+    '''
+    import polars as pl
+    data = pl.read_csv("data/randow_sample_label_quality_10000.csv")
+    loguru.logger.info(f"total quality data size:{len(data)}")
+    data = data.to_pandas()
+    data_save_list = []
+    for index, row_data in tqdm(data.iterrows(),total=data.shape[0]):
+        data_dict = row_data.to_dict()
+        image_name = data_dict['照片'].split("https://zhgd-prod-oss.oss-cn-shenzhen.aliyuncs.com/")[-1]
+        ##download image dir
+        if image_name in load_images_from_folder("data/sample10000_image"):
+            loguru.logger.info(f"image is exist,no donwload")
+            data_entity = ImageTableProcess(
+                    id=str(index),
+                    image_id=image_name,
+                    image_correct_id="",
+                    image_oss_url=data_dict['照片'],
+                    conversations=[{}],
+                    position=data_dict["隐患部位"] if isinstance(data_dict['隐患部位'], str) else "",
+                    accident_label=data_dict['name'] if isinstance(data_dict['name'], str) else "",
+                    description=data_dict['隐患内容'],
+                    correct_description="",
+                    type=data_dict['类型'],
+                    risk="",
+                    correct_basic="",
+                    label="0"
+                )
+            data_save_list.append(data_entity.to_dict())
+            continue
+        ##下载图片
+        is_download = download_image(data_dict['照片'], image_name)
+        if is_download:
+            data_entity = ImageTableProcess(
+                    id=str(index),
+                    image_id=image_name,
+                    image_correct_id="",
+                    image_oss_url=data_dict['照片'],
+                    conversations=[{}],
+                    position=data_dict["隐患部位"] if isinstance(data_dict['隐患部位'], str) else "",
+                    accident_label=data_dict['name'] if isinstance(data_dict['name'], str) else "",
+                    description=data_dict['隐患内容'],
+                    correct_description="",
+                    type=data_dict['类型'],
+                    risk="",
+                    correct_basic="",
+                    label="0"
+                )
+            data_save_list.append(data_entity.to_dict())
+    loguru.logger.info(f"data_save_list:{len(data_save_list)}")
+    save_file_name = "data/images_randow_sample_label_quality_10000_" + str(len(data_save_list)) + ".json"
+    write_json_file(data_save_list, save_file_name)
+
+    
 def exetract_sample_quality_total_data_10000():
     '''
     随机抽取整个质量库中隐患类别中前top10中每个类别的10000条
@@ -42,12 +99,10 @@ def exetract_sample_quality_total_data_10000():
         loguru.logger.info(f"column name {name}")
         sampled_data = data[data['name'] == name].sample(n=10000, replace=True)
         random_samples = pd.concat([random_samples, sampled_data], axis=0)
-    random_samples.to_csv("data/randow_sample_label_quality_1000.csv",index=False)
+    random_samples.to_csv("data/randow_sample_label_quality_10000.csv",index=False)
     ##验证一下数据是否为随机类别
     random_result = random_samples['name'].value_counts()
     loguru.logger.info(f"random_result:{random_result}")
-        
-
     
 def analysize_quality_total_data(show_plot=None):
     import polars as pl
@@ -124,6 +179,9 @@ def execute_analysize_quality_data():
     #     file_path = "/home/dataset-s3-0/gaojing/datasets/images_table/" +raw_file_path
     #     loguru.logger.info(f"start preprocess file:{file_path}")
     exetract_sample_quality_total_data_10000()
+    
+def excute_preproce_sample_quality_total_data_10000():
+    read_sample_quality_total_data_10000()
     
     
 def execute_image_table_quality_main_structure():

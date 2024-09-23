@@ -9,6 +9,36 @@ from itertools import islice
 import loguru
 import requests
 
+def download_image(url, filename):
+    root_image = "data/sample10000_image/"
+    images_dir_path = root_image + filename
+    # loguru.logger.info(f"images dir path {images_dir_path}")
+    if filename in load_images_from_folder(root_image):
+        loguru.logger.info(f"image is exist,no donwload")
+        return False
+    else:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # 检查请求是否成功
+            with open(images_dir_path, 'wb') as f:
+                f.write(response.content)
+                loguru.logger.info(f"image save：{filename}")
+                return True
+        except requests.RequestException as e:
+            loguru.logger.info(f"request error：{e}")
+            return False
+        except IOError as e:
+            loguru.logger.info(f"request io error：{e}")
+
+
+
+def load_images_from_folder(folder_path):
+    images_list = []
+    for filename in os.listdir(folder_path):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            images_list.append(filename)
+    return images_list
+
 
 def image_to_base64(image_path,root_path):
     root_path =root_path
