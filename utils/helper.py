@@ -51,7 +51,13 @@ def write_json_file_line(data_dict, save_file_name):
     with open(save_file_name, "w", encoding="utf-8") as file:
         for line in data_dict:
             file.write(json.dumps(line, ensure_ascii=False)+"\n")
-            
+         
+         
+def write_json_file(data_dict, save_file_name):
+    jsonn_str_data = json.dumps(data_dict, ensure_ascii=False)
+    with open(save_file_name, "w", encoding="utf-8") as file:
+        loguru.logger.info(f"save json file {save_file_name}")
+        file.write(jsonn_str_data)   
             
 def llm_result_postprocess(llm_response_content):
     ##json的后处理
