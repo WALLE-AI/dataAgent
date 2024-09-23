@@ -1,5 +1,7 @@
 
 import json
+from hashlib import sha256
+
 from PIL import Image
 
 import base64
@@ -8,6 +10,11 @@ from itertools import islice
 
 import loguru
 import requests
+
+
+def generate_text_hash(text: str) -> str:
+    hash_text = str(text) + "None"
+    return sha256(hash_text.encode()).hexdigest()
 
 def download_image(url, filename):
     root_image = "data/sample10000_image/"

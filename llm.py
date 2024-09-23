@@ -87,15 +87,14 @@ class LLMApi():
         return prompt
     
     @classmethod
-    def build_prompt(cls,query,search=False):
-        context = ""
+    def build_prompt(cls,query,system_prompt,search=False):
         if search:
             search_result = ddg_search_text(query)
             if search_result:
                 context = ";".join([text["snippet"] for text in search_result])
                 loguru.logger.info(f"search context:{context}")
         #这里可以加上ddsg api接口
-        prompt = [{"role":"system","content":PROMPT_TEST.format(context=context)},
+        prompt = [{"role":"system","content":system_prompt},
                   {"role": "user", "content": query}]
         return prompt
     

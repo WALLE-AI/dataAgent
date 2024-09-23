@@ -1,10 +1,10 @@
 """Abstract interface for document loader implementations."""
 
 from collections.abc import Iterator
-from sqlite3 import Blob
 from typing import Optional
-from xml.dom.minidom import Document
 
+from entities.document import Document
+from parser.blob import Blob
 from parser.extractor_base import BaseExtractor
 
 
@@ -24,13 +24,13 @@ class PdfExtractor(BaseExtractor):
     def extract(self) -> list[Document]:
         plaintext_file_key = ""
         plaintext_file_exists = False
-        if self._file_cache_key:
-            try:
-                # text = storage.load(self._file_cache_key).decode("utf-8")
-                plaintext_file_exists = True
-                return [Document(page_content=text)]
-            except FileNotFoundError:
-                pass
+        # if self._file_cache_key:
+        #     try:
+        #         # text = storage.load(self._file_cache_key).decode("utf-8")
+        #         plaintext_file_exists = True
+        #         return [Document(page_content=text)]
+        #     except FileNotFoundError:
+        #         pass
         documents = list(self.load())
         text_list = []
         for document in documents:
