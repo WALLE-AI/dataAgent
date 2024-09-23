@@ -26,19 +26,28 @@ def plot_quality_data(data,save_image_name):
     # 保存图表到本地文件
     plt.show()
     plt.savefig('data/' + save_image_name+".png")
-    # # 显示图表
-    # 
-    # 设置Seaborn的样式
-    # import pdb
-    # pdb.set_trace()
-    # sns.set(style="whitegrid")
-    # # 使用Seaborn绘制条形图
-    # plt.figure(figsize=(8, 6))  # 设置图形的大小
-    # sns.barplot(x='Category', y='Values', data=data)
-    # plt.title('Bar Plot Example')
-    # plt.xlabel('Category')
-    # plt.ylabel('Values')
-    # plt.savefig('data/' + save_image_name+".png")
+    
+def exetract_sample_quality_total_data_10000():
+    '''
+    随机抽取整个质量库中隐患类别中前top10中每个类别的10000条
+    '''
+    import polars as pl
+    data = pl.read_csv("data/image_table_quality_total_data.csv")
+    loguru.logger.info(f"total quality data size:{len(data)}")
+    data = data.to_pandas()
+    result = data['name'].value_counts().head(10)
+    result_df = result.reset_index()
+    random_samples = pd.DataFrame()
+    for name in result_df['name'].values:
+        loguru.logger.info(f"column name {name}")
+        sampled_data = data[data['name'] == name].sample(n=10000, replace=True)
+        random_samples = pd.concat([random_samples, sampled_data], axis=0)
+    random_samples.to_csv("data/randow_sample_label_quality_1000.csv",index=False)
+    ##验证一下数据是否为随机类别
+    random_result = random_samples['name'].value_counts()
+    loguru.logger.info(f"random_result:{random_result}")
+        
+
     
 def analysize_quality_total_data(show_plot=None):
     import polars as pl
@@ -114,7 +123,7 @@ def execute_analysize_quality_data():
     # for raw_file_path in raw_file_list:
     #     file_path = "/home/dataset-s3-0/gaojing/datasets/images_table/" +raw_file_path
     #     loguru.logger.info(f"start preprocess file:{file_path}")
-    analysize_quality_total_data(True)
+    exetract_sample_quality_total_data_10000()
     
     
 def execute_image_table_quality_main_structure():
