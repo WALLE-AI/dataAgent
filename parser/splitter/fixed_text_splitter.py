@@ -13,7 +13,7 @@ from parser.splitter.text_splitter import (
     TokenTextSplitter,
     Union,
     )
-from tokenizers.gpt2_tokenzier import  GPT2Tokenizer
+from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
 
 
 class EnhanceRecursiveCharacterTextSplitter(RecursiveCharacterTextSplitter):

@@ -28,7 +28,7 @@ class TextSFTDatasets():
         all_qa_documents = []
         for document in documents:
             # document clean
-            document_text = CleanProcessor.clean(document.page_content, kwargs.get("process_rule"))
+            document_text = CleanProcessor.clean(document.page_content, {})
             document.page_content = document_text
             # parse document to nodes
             document_nodes = splitter.split_documents([document])
