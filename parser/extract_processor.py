@@ -3,7 +3,9 @@ from pathlib import Path
 from entities.document import Document
 from parser.markdown_extractor import MarkdownExtractor
 from parser.pdf_extractor import PdfExtractor
+from parser.unstructured.unstructured_doc_extractor import UnstructuredWordExtractor
 from parser.unstructured.unstructured_markdown_extractor import UnstructuredMarkdownExtractor
+from parser.unstructured.unstructured_pdf_extractor import UnstructuredPdfExtractor
 
 
 class EtlType(Enum):
@@ -26,9 +28,14 @@ class ExtractProcessor:
         cls, file_path: str = None
     ) -> list[Document]:
         file_extension = _is_file_format(file_path)
-        if EtlType.ETL_TYPE == "Unstructured":
+        if EtlType.ETL_TYPE.value == "Unstructured":
+            #TODO：测试API的效果
             if file_extension in {".md", ".markdown"}:
                 extractor = UnstructuredMarkdownExtractor(file_path, "unstructured_api_url")
+            elif file_extension in {".docx",".doc"}:
+                extractor = UnstructuredWordExtractor(file_path, "unstructured_api_url")
+            elif file_extension == ".pdf":
+                extractor = UnstructuredPdfExtractor(file_path,"unstructured_api_url")
         else:
             if file_extension == ".pdf":
                 extractor = PdfExtractor(file_path)

@@ -29,7 +29,12 @@ MODEL_NAME_LIST = {
     },
     "siliconflow":{
         "Qwen/Qwen2-7B-Instruct":"Qwen/Qwen2-7B-Instruct",
-        "Qwen/Qwen2-72B-Instruct":"Qwen/Qwen2-72B-Instruct"
+        "Qwen/Qwen2-72B-Instruct":"Qwen/Qwen2-72B-Instruct",
+        "Qwen/Qwen2.5-72B-Instruct":"Qwen/Qwen2.5-72B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct":"Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-32B-Instruct":"Qwen/Qwen2.5-32B-Instruct",
+        "Qwen/Qwen2.5-14B-Instruct":"Qwen/Qwen2.5-14B-Instruct",
+        
     }
     
 }
@@ -87,20 +92,23 @@ class LLMApi():
         return prompt
     
     @classmethod
-    def build_prompt(cls,query,system_prompt,search=False):
+    def build_prompt(cls,query,system_prompt=None,search=False):
         if search:
             search_result = ddg_search_text(query)
             if search_result:
                 context = ";".join([text["snippet"] for text in search_result])
                 loguru.logger.info(f"search context:{context}")
         #这里可以加上ddsg api接口
-        prompt = [{"role":"system","content":system_prompt},
+        if system_prompt:
+            prompt = [{"role":"system","content":system_prompt},
                   {"role": "user", "content": query}]
+        else:
+            prompt = [{"role": "user", "content": query}]
         return prompt
     
     
     @classmethod
-    def call_llm(cls,prompt,stream=False,llm_type="siliconflow",model_name="Qwen/Qwen2-7B-Instruct"):
+    def call_llm(cls,prompt,stream=False,llm_type="siliconflow",model_name="Qwen/Qwen2.5-7B-Instruct"):
         '''
         默认选择siliconflow qwen2-72B的模型来
         '''
