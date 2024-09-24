@@ -1,4 +1,5 @@
 ##解析抽取手册数据，进行chunk后 对chunk数据进行QA抽取
+from pathlib import Path
 import re
 import threading
 import uuid
@@ -8,6 +9,8 @@ import loguru
 from entities.document import Document
 from llm import LLMApi
 from parser.cleaner.clean_processor import CleanProcessor
+from parser.extract_processor import EtlType, ExtractProcessor
+from parser.markdown_extractor import MarkdownExtractor
 from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
 from prompt import GENERATOR_QA_PROMPT
@@ -17,18 +20,35 @@ from utils.helper import generate_text_hash
 class TextSFTDatasets():
     def __init__(self, file_path):
         self.file_path = file_path
-        self.parser = PdfExtractor(self.file_path)
-
+        
     def extract_text(self):
-        return self.parser.extract()
+        return ExtractProcessor.extract(self.file_path)
+    
+    def chunk_text_to_qa_unstructured(self, documents: list[Document], **kwargs) -> list[Document]:
+        all_qa_documents = []
+        for document in documents:
+            threads = []
+            document_format_thread = threading.Thread(
+                        target=self._format_qa_document,
+                        kwargs={
+                            "document_node": document,
+                            "all_qa_documents": all_qa_documents,
+                            "document_language": kwargs.get("doc_language", "English"),
+                        },
+            )
+            threads.append(document_format_thread)
+            document_format_thread.start()
+            for thread in threads:
+                thread.join()
+        return all_qa_documents
 
-    def chuck_text_to_qa(self, documents: list[Document], **kwargs) -> list[Document]:
+    def chunk_text_to_qa(self, documents: list[Document], **kwargs) -> list[Document]:
         splitter = self._get_splitter()
         all_documents = []
         all_qa_documents = []
         for document in documents:
             # document clean
-            document_text = CleanProcessor.clean(document.page_content, {})
+            document_text = CleanProcessor.clean(document.page_content, True)
             document.page_content = document_text
             # parse document to nodes
             document_nodes = splitter.split_documents([document])
@@ -55,11 +75,9 @@ class TextSFTDatasets():
                     document_format_thread = threading.Thread(
                         target=self._format_qa_document,
                         kwargs={
-                            "flask_app": "hello world",
-                            "tenant_id": kwargs.get("tenant_id"),
                             "document_node": doc,
                             "all_qa_documents": all_qa_documents,
-                            "document_language": kwargs.get("doc_language", "English"),
+                            "document_language": kwargs.get("doc_language", "Chinese"),
                         },
                     )
                     threads.append(document_format_thread)
@@ -71,8 +89,8 @@ class TextSFTDatasets():
     def _get_splitter(self):
         separator = "\n"
         character_splitter = FixedRecursiveCharacterTextSplitter.from_encoder(
-            chunk_size=512,
-            chunk_overlap=100,
+            chunk_size=100,
+            chunk_overlap=10,
             fixed_separator=separator,
             separators=["\n\n", "。", ". ", " ", ""],
             embedding_model_instance=None,
@@ -119,8 +137,9 @@ class TextSFTDatasets():
 
 def test_text_sft_dataset():
     file_path = "data\\《中华人民共和国安全生产法》（2021 年修订版）.pdf"
-    text_sft_dataset = TextSFTDatasets(file_path)
+    file_path_md = "data\\test_readme.md"
+    text_sft_dataset = TextSFTDatasets(file_path_md)
     all_docs = text_sft_dataset.extract_text()
     loguru.logger.info(f"text {len(all_docs)}")
-    text_sft_dataset.chuck_text_to_qa(all_docs)
+    text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
 
