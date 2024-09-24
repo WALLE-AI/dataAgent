@@ -17,3 +17,4 @@
 * https://github.com/svjack/docvqa-gen
 * https://github.com/percent4/embedding_rerank_retrieval embedding模型微调
 * https://github.com/Steven-Luo/MasteringRAG/blob/main/00_PDF%E8%A7%A3%E6%9E%90%E4%B8%8EQA%E6%8A%BD%E5%8F%96_v1.1.ipynb embedding 微调
+* https://pytorch.org/tutorials/beginner/knowledge_distillation_tutorial.html 知识蒸馏

@@ -1,6 +1,7 @@
 from enum import Enum
 from pathlib import Path
 from entities.document import Document
+from parser.latex_extractor import LatexExtractor
 from parser.markdown_extractor import MarkdownExtractor
 from parser.pdf_extractor import PdfExtractor
 from parser.unstructured.unstructured_doc_extractor import UnstructuredWordExtractor
@@ -36,6 +37,8 @@ class ExtractProcessor:
                 extractor = UnstructuredWordExtractor(file_path, "unstructured_api_url")
             elif file_extension == ".pdf":
                 extractor = UnstructuredPdfExtractor(file_path,"unstructured_api_url")
+            elif file_extension == ".tex":
+                extractor = LatexExtractor(file_path)
         else:
             if file_extension == ".pdf":
                 extractor = PdfExtractor(file_path)

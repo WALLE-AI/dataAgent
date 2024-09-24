@@ -159,9 +159,11 @@ class TextSFTDatasets():
 def test_text_sft_dataset():
     file_path = "data\\《中华人民共和国安全生产法》（2021 年修订版）.pdf"
     file_path_md = "data\\test_readme.md"
+    file_path_md = "data\\handbook_test.md"
+    file_path_tex = "data\\test.tex"
     ##有问题
     file_path_doc = "data\\《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
-    text_sft_dataset = TextSFTDatasets(file_path_md)
+    text_sft_dataset = TextSFTDatasets(file_path_tex)
     all_docs = text_sft_dataset.extract_text()
     loguru.logger.info(f"text {len(all_docs)}")
     all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
