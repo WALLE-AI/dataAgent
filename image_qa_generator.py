@@ -46,6 +46,14 @@ def image_generator_conversation_data(data_dict,data_dict_list,tokens_list):
 
 
 
+def semaphore_do_work(data_dict,data_dict_list,tokens_list,semaphore, thread_name):
+    with semaphore:
+        loguru.logger.info(f"{thread_name} is working")
+        image_generator_conversation_data(data_dict,data_dict_list,tokens_list)
+        loguru.logger.info(f"{thread_name} is done")
+
+
+
 def image_generator_conversation_index(data_json_file):
     with open(data_json_file, "r", encoding="utf-8") as file:
         data = file.read()
@@ -56,17 +64,31 @@ def image_generator_conversation_index(data_json_file):
         all_data_use_total_tokens_list=[]
         data_dict_list = []
         threads=[]
-        for _data in tqdm(data[:2]):
+        max_threads = 10
+        semaphore = threading.Semaphore(max_threads)
+        thread_name = 0
+        for _data in tqdm(data[:100]):
             loguru.logger.info(f"accident_label:{_data['accident_label']},description:{_data['description']}")
+            # document_format_thread = threading.Thread(
+            #             target=image_generator_conversation_data,
+            #             kwargs={
+            #                 "data_dict": _data,
+            #                 "data_dict_list": data_dict_list,
+            #                 "tokens_list":all_data_use_total_tokens_list
+            #             }
+            #         )
             document_format_thread = threading.Thread(
-                        target=image_generator_conversation_data,
+                        target=semaphore_do_work,
                         kwargs={
                             "data_dict": _data,
                             "data_dict_list": data_dict_list,
-                            "tokens_list":all_data_use_total_tokens_list
+                            "tokens_list":all_data_use_total_tokens_list,
+                            "semaphore":semaphore,
+                            "thread_name":thread_name
                         }
                     )
             ##执行线程
+            thread_name+=1
             threads.append(document_format_thread)
             document_format_thread.start()
             # image_generator_conversation_data(_data,data_dict_list,all_data_use_total_tokens_list)
