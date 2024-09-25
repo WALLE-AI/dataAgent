@@ -18,6 +18,16 @@ import concurrent.futures
 from pathlib import Path
 from typing import NamedTuple, Optional, cast
 
+def pdf_file_image(pdf_file,zoomin=3):
+    '''
+    将pdf全部转成image
+    '''
+    import pdfplumber
+    pdf = pdfplumber.open(pdf_file)
+    images = [p.to_image(resolution=72 * zoomin).annotated for i, p in
+                            enumerate(pdf.pages)]
+    return images
+
 
 class FileEncoding(NamedTuple):
     """A file encoding as the NamedTuple."""
