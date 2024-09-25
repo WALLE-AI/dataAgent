@@ -35,6 +35,9 @@ MODEL_NAME_LIST = {
         "Qwen/Qwen2.5-32B-Instruct":"Qwen/Qwen2.5-32B-Instruct",
         "Qwen/Qwen2.5-14B-Instruct":"Qwen/Qwen2.5-14B-Instruct",
         
+    },
+    "localhost":{
+        "intern_vl":"intern_vl",
     }
     
 }
@@ -57,7 +60,7 @@ class LLMApi():
             base_url = "https://api.openai.com/v1"
             api_key  = os.environ.get("OPENAI_API_KEY")
         else:
-            base_url = os.getenv("VLM_SERVE_HOST") +":9005/v1"
+            base_url = os.getenv("VLM_SERVE_HOST")
             api_key  = "empty"
         return base_url,api_key     
     @classmethod
@@ -108,7 +111,7 @@ class LLMApi():
     
     
     @classmethod
-    def call_llm(cls,prompt,stream=False,llm_type="siliconflow",model_name="Qwen/Qwen2.5-7B-Instruct"):
+    def call_llm(cls,prompt,stream=False,llm_type="siliconflow",model_name="Qwen/Qwen2.5-72B-Instruct"):
         '''
         默认选择siliconflow qwen2-72B的模型来
         '''
@@ -133,7 +136,7 @@ class LLMApi():
 
 def model_image_table_format_execute(data_dict, prompt):
      build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])
-     llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="openrouter",model_name="openai/gpt-4o-mini-2024-07-18")
+     llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="localhost",model_name="intern_vl")
      llm_result_dict['prompt']=prompt
      return llm_result_dict
 

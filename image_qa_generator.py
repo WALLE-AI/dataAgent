@@ -1,4 +1,5 @@
 import json
+import random
 
 import loguru
 
@@ -45,21 +46,23 @@ def image_generator_conversation_data(data_dict):
 def image_generator_conversation_index(data_json_file):
     with open(data_json_file, "r", encoding="utf-8") as file:
         data = file.read()
+        ##打散数据
+        # random.shuffle(data)
         data = json.loads(data)
         loguru.logger.info(f"data size :{len(data)}")
         all_data_use_total_tokens = 0
         data_dict_list = []
-        for _data in tqdm(data[:100]):
+        for _data in tqdm(data[:10]):
             loguru.logger.info(f"accident_label:{_data['accident_label']},description:{_data['description']}")
             data_dict,total_tokens = image_generator_conversation_data(_data)
             data_dict_list.append(data_dict)
             all_data_use_total_tokens += total_tokens
-            save_file_name = "data/starvlm_image_qa_" + str(100) + ".json"
+            save_file_name = "data/images_randow_sample_label_quality_" + str(81819) + ".json"
             write_json_file_line(data_dict_list, save_file_name)
         loguru.logger.info(f"all_data_use_total_tokens:{all_data_use_total_tokens}")
 
 
 def execute_image_qa_generator():
-    json_file_path = "D:\\LLM\\project\\WALL-AI\\easy-rag\\data\\images_table_format_59973.json"
+    json_file_path = "data\\images_randow_sample_label_quality_10000_81819.json"
     image_generator_conversation_index(json_file_path)
 
