@@ -1,4 +1,5 @@
 
+from typing import Generator
 import loguru
 import openai
 import os
@@ -6,6 +7,7 @@ import threading
 import httpx
 
 from entities.image_entity import ImageVlmModelOutPut
+from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
 from prompt import PROMPT_TEST
 from utils.helper import ddg_search_text
 
@@ -111,7 +113,43 @@ class LLMApi():
     
     
     @classmethod
-    def call_llm(cls,prompt,stream=False,llm_type="siliconflow",model_name="Qwen/Qwen2.5-72B-Instruct"):
+    def messages_stream_generator(cls,response):
+        message_content = ""
+        for text in response:
+            ##finsh_reason获取usage内容
+            if text.choices[0].finish_reason == "stop":
+                usage_info_dict={}
+                if text.usage:
+                    usage_info_dict = text.usage.to_dict()
+                else:
+                    usage_info_dict['total_tokens'] = 0
+                message_content += text.choices[0].delta.content
+                response_dict = ImageVlmModelOutPut(
+                model_name=text.model,
+                content=message_content,
+                total_tokens=usage_info_dict['total_tokens']
+                )
+                return response_dict.to_dict()
+            else:
+                if text.choices[0].delta.content:
+                    message_content += text.choices[0].delta.content
+        return {}
+    @classmethod
+    def _get_num_tokens_by_gpt2(self, text: str) -> int:
+        """
+        Get number of tokens for given prompt messages by gpt2
+        Some provider models do not provide an interface for obtaining the number of tokens.
+        Here, the gpt2 tokenizer is used to calculate the number of tokens.
+        This method can be executed offline, and the gpt2 tokenizer has been cached in the project.
+
+        :param text: plain text of prompt. You need to convert the original message to plain text
+        :return: number of tokens 实际tokens计算有点误差
+        """
+        return GPT2Tokenizer.get_num_tokens(text)
+    
+    
+    @classmethod
+    def call_llm(cls,prompt,stream=True,llm_type="siliconflow",model_name="Qwen/Qwen2.5-72B-Instruct"):
         '''
         默认选择siliconflow qwen2-72B的模型来
         '''
@@ -122,21 +160,26 @@ class LLMApi():
                 stream=stream,
                 temperature=0.2,
             )
-        response_dict = ImageVlmModelOutPut(
-            model_name=llm_response.model,
-            content=llm_response.choices[0].message.content,
-            total_tokens=llm_response.usage.total_tokens
-        )
-        return response_dict.to_dict()
+        if stream:
+            return cls.messages_stream_generator(llm_response)
+        else:
+            response_dict = ImageVlmModelOutPut(
+                model_name=llm_response.model,
+                content=llm_response.choices[0].message.content,
+                total_tokens=llm_response.usage.total_tokens
+            )
+            return response_dict.to_dict()
     
+
     @classmethod    
     def get_client(cls,llm_type):
         return cls().llm_client(llm_type)
 
-
 def model_image_table_format_execute(data_dict, prompt):
-     build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])
-     llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="localhost",model_name="intern_vl")
-     llm_result_dict['prompt']=prompt
-     return llm_result_dict
+    build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])
+    llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="localhost",model_name="intern_vl")
+    llm_result_dict['prompt']=prompt
+    if llm_result_dict['total_tokens']==0:
+        llm_result_dict['total_tokens'] =LLMApi._get_num_tokens_by_gpt2(prompt) + LLMApi._get_num_tokens_by_gpt2(llm_result_dict['content'])
+    return llm_result_dict
 

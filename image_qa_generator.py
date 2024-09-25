@@ -1,5 +1,7 @@
 import json
 import random
+import threading
+import timeit
 
 import loguru
 
@@ -7,10 +9,10 @@ from llm import model_image_table_format_execute
 from prompt import STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT, STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
 from tqdm import tqdm
 
-from utils.helper import llm_result_postprocess, write_json_file_line
+from utils.helper import MeasureExecutionTime, llm_result_postprocess, write_json_file_line
 
-
-def image_generator_conversation_data(data_dict):
+@MeasureExecutionTime
+def image_generator_conversation_data(data_dict,data_dict_list,tokens_list):
     q_prompt = STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
     a_prompt = STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT
     response_dict2 = model_image_table_format_execute(data_dict, q_prompt.replace("{content}", data_dict['description']))
@@ -39,7 +41,8 @@ def image_generator_conversation_data(data_dict):
         convesation_format_gpt_dict["value"] = response_dict3['content']
         data_dict['conversations'].append(convesation_format_gpt_dict)
         total_tokens +=response_dict3['total_tokens']
-    return data_dict,total_tokens
+    data_dict_list.append(data_dict)
+    tokens_list.append(total_tokens)
 
 
 
@@ -50,16 +53,28 @@ def image_generator_conversation_index(data_json_file):
         # random.shuffle(data)
         data = json.loads(data)
         loguru.logger.info(f"data size :{len(data)}")
-        all_data_use_total_tokens = 0
+        all_data_use_total_tokens_list=[]
         data_dict_list = []
-        for _data in tqdm(data[:10]):
+        threads=[]
+        for _data in tqdm(data[:2]):
             loguru.logger.info(f"accident_label:{_data['accident_label']},description:{_data['description']}")
-            data_dict,total_tokens = image_generator_conversation_data(_data)
-            data_dict_list.append(data_dict)
-            all_data_use_total_tokens += total_tokens
-            save_file_name = "data/images_randow_sample_label_quality_" + str(81819) + ".json"
-            write_json_file_line(data_dict_list, save_file_name)
-        loguru.logger.info(f"all_data_use_total_tokens:{all_data_use_total_tokens}")
+            document_format_thread = threading.Thread(
+                        target=image_generator_conversation_data,
+                        kwargs={
+                            "data_dict": _data,
+                            "data_dict_list": data_dict_list,
+                            "tokens_list":all_data_use_total_tokens_list
+                        }
+                    )
+            ##执行线程
+            threads.append(document_format_thread)
+            document_format_thread.start()
+            # image_generator_conversation_data(_data,data_dict_list,all_data_use_total_tokens_list)
+        for thread in threads:
+            thread.join()
+        save_file_name = "data/images_randow_sample_label_quality_" + str(81819) + ".json"
+        write_json_file_line(data_dict_list, save_file_name)
+        loguru.logger.info(f"all_data_use_total_tokens:{sum(all_data_use_total_tokens_list)}")
 
 
 def execute_image_qa_generator():

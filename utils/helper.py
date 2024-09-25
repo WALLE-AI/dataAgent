@@ -1,6 +1,7 @@
 
 import json
 from hashlib import sha256
+import time
 
 from PIL import Image
 
@@ -148,6 +149,46 @@ def llm_result_postprocess(llm_response_content):
     from json_repair import repair_json
     json_string = repair_json(llm_response_content, return_objects=True)
     return json_string
+
+
+class MeasureExecutionTime:
+    """
+    装饰器类，用于测量另一个函数的执行时间，并统计总时间
+    """
+    total_time = 0 
+
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        start_time = time.time()  # 开始时间
+        result = self.func(*args, **kwargs)  # 执行函数
+        end_time = time.time()  # 结束时间
+        execution_time = end_time - start_time  # 计算执行时间
+        self.total_time += execution_time  # 累加到总时间
+        loguru.logger.info(f"function {self.func.__name__} execute time：{execution_time:.6f} 秒")
+        loguru.logger.info(f"function {self.func.__name__} total execute time：{self.total_time:.6f} 秒")
+        return result
+    @classmethod
+    def get_total_time(cls):
+        """sssssssss
+        返回函数调用的总执行时间
+        """
+        return cls.total_time
+
+
+def single_measure_execution_time(func):
+    """
+    装饰器函数，用于测量另一个函数的执行时间,调用一次时间计算
+    """
+    def wrapper(*args, **kwargs):
+        start_time = time.time()  # 开始时间
+        result = func(*args, **kwargs)  # 执行函数
+        end_time = time.time()  # 结束时间
+        execution_time = end_time - start_time  # 计算执行时间
+        loguru.logger.info(f"function {func.__name__} execute time：{execution_time:.6f} 秒")
+        return result,execution_time
+    return wrapper
 
 
 def ddg_search_text(query:str, max_results=5):
