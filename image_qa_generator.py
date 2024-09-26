@@ -64,10 +64,10 @@ def image_generator_conversation_index(data_json_file):
         all_data_use_total_tokens_list=[]
         data_dict_list = []
         threads=[]
-        max_threads = 10
+        max_threads = 5
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
-        for _data in tqdm(data[:100]):
+        for _data in tqdm(data[:10]):
             loguru.logger.info(f"accident_label:{_data['accident_label']},description:{_data['description']}")
             # document_format_thread = threading.Thread(
             #             target=image_generator_conversation_data,

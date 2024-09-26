@@ -123,7 +123,7 @@ class LLMApi():
                     usage_info_dict = text.usage.to_dict()
                 else:
                     ##total tokens
-                    usage_info_dict['total_tokens'] = cls._get_num_tokens_by_gpt2(prompt[-1]['content']) + cls._get_num_tokens_by_gpt2(message_content)
+                    usage_info_dict['total_tokens'] = cls._get_num_tokens_by_gpt2(message_content)
                 message_content += text.choices[0].delta.content
                 response_dict = ImageVlmModelOutPut(
                 model_name=text.model,
@@ -180,7 +180,6 @@ def model_image_table_format_execute(data_dict, prompt):
     build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])
     llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="openrouter",model_name="openai/gpt-4o-mini-2024-07-18")
     llm_result_dict['prompt']=prompt
-    if llm_result_dict['total_tokens']==0:
-        llm_result_dict['total_tokens'] =LLMApi._get_num_tokens_by_gpt2(prompt) + LLMApi._get_num_tokens_by_gpt2(llm_result_dict['content'])
+    llm_result_dict['total_tokens'] =LLMApi._get_num_tokens_by_gpt2(prompt)+llm_result_dict['total_tokens']
     return llm_result_dict
 
