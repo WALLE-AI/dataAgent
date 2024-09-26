@@ -113,7 +113,7 @@ class LLMApi():
     
     
     @classmethod
-    def messages_stream_generator(cls,response):
+    def messages_stream_generator(cls,prompt,response):
         message_content = ""
         for text in response:
             ##finsh_reason获取usage内容
@@ -122,7 +122,8 @@ class LLMApi():
                 if text.usage:
                     usage_info_dict = text.usage.to_dict()
                 else:
-                    usage_info_dict['total_tokens'] = 0
+                    ##total tokens
+                    usage_info_dict['total_tokens'] = cls._get_num_tokens_by_gpt2(prompt[-1]['content']) + cls._get_num_tokens_by_gpt2(message_content)
                 message_content += text.choices[0].delta.content
                 response_dict = ImageVlmModelOutPut(
                 model_name=text.model,
@@ -161,7 +162,7 @@ class LLMApi():
                 temperature=0.2,
             )
         if stream:
-            return cls.messages_stream_generator(llm_response)
+            return cls.messages_stream_generator(prompt,llm_response)
         else:
             response_dict = ImageVlmModelOutPut(
                 model_name=llm_response.model,
@@ -177,7 +178,7 @@ class LLMApi():
 
 def model_image_table_format_execute(data_dict, prompt):
     build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])
-    llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="localhost",model_name="intern_vl")
+    llm_result_dict = LLMApi.call_llm(build_prompt,llm_type="openrouter",model_name="openai/gpt-4o-mini-2024-07-18")
     llm_result_dict['prompt']=prompt
     if llm_result_dict['total_tokens']==0:
         llm_result_dict['total_tokens'] =LLMApi._get_num_tokens_by_gpt2(prompt) + LLMApi._get_num_tokens_by_gpt2(llm_result_dict['content'])

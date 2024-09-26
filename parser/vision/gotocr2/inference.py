@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 import loguru
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
@@ -44,17 +45,16 @@ def load_image(image_file):
     return image
 
 
-def inference_model(model_path,image,type):
-    # Model
+def init_model(model_path):
     disable_torch_init()
     model_name = os.path.expanduser(model_path)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-
-
     model = GOTQwenForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, device_map='cuda', use_safetensors=True, pad_token_id=151643).eval()
+    return model,tokenizer
 
-    
+def inference_model(model,tokenizer,image,type):
+    # Model
 
     model.to(device='cuda',  dtype=torch.bfloat16)
 
@@ -236,23 +236,31 @@ def inference_model(model_path,image,type):
 
 
     
-def write_tex_file(content,page_num,root_path):
-    save_file_path = root_path + "/" +str(page_num)+".tex"
+def write_tex_file(content,root_path,file_name,page_num=None):
+    if page_num:
+        save_file_path = root_path + "/" +file_name+"_"+str(page_num)+".tex"
+    else:
+        save_file_path = root_path + "/" +file_name +".tex"
     with open(save_file_path,"w",encoding="utf-8") as file:
         file.write(content)
          
 def execute_gotocr2_model():
-    model_name = "D:\\InnovationProject\\models\\got-ocr2_0"
-    image_file="D:\\InnovationProject\\WALLE-AI\\dataAgent\\data\\test01.png"
-    pdf_file = "D:\\InnovationProject\\WALLE-AI\\dataAgent\\data\\《中华人民共和国安全生产法》（2021 年修订版）.pdf"
+    model_name = os.getenv("MODEL_PATH_GOT")
+    image_file="data/test01_ocr2.0.png"
+    pdf_file = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.pdf"
     # image = load_image(image_file)
+    pdf_file_path = Path(pdf_file)
     pdf_image = pdf_file_image(pdf_file)
+    model,tokenizer = init_model(model_name)
+    content_list = []
     for index,image in enumerate(pdf_image):
         type_ocr = "format"
-        content = inference_model(model_name,image,type_ocr)
-        write_tex_file(content,index,"D:\\InnovationProject\\WALLE-AI\\dataAgent\\data\\test_pdf_got")
-        if index == 5:
+        content = inference_model(model,tokenizer,image,type_ocr)
+        content_list.append(content)
+        if index == 2:
             break
+    content = "\n".join(content_list)
+    write_tex_file(content,"data/test_pdf_got",pdf_file_path.stem)
     
     
 
