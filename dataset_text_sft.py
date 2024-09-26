@@ -5,6 +5,7 @@ import threading
 import uuid
 
 import loguru
+from tqdm import tqdm
 
 from entities.dataset_sft_entity import DatasetsTextSFTFormat
 from entities.document import Document
@@ -20,6 +21,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def semaphore_do_work(execute_function,semaphore,thread_name,document_node,all_qa_documents,total_tokens_num,document_language):
+    with semaphore:
+        loguru.logger.info(f"{thread_name} is working")
+        execute_function(document_node,all_qa_documents,total_tokens_num,document_language)
+        loguru.logger.info(f"{thread_name} is done")
+
+
 class TextSFTDatasets():
     def __init__(self, file_path):
         self.file_path = file_path
@@ -30,22 +38,29 @@ class TextSFTDatasets():
     def chunk_text_to_qa_unstructured(self, documents: list[Document], **kwargs) -> list[Document]:
         all_qa_documents = []
         total_tokens_num = []
-        for document in documents:
+        max_threads = 5
+        semaphore = threading.Semaphore(max_threads)
+        thread_name = 0
+        for document in tqdm(documents[:10]):
             threads = []
             document_format_thread = threading.Thread(
-                        target=self._format_qa_document,
+                        target=semaphore_do_work,
                         kwargs={
+                            "execute_function": self._format_qa_document,
+                            "semaphore":semaphore,
+                            "thread_name":thread_name,
                             "document_node": document,
                             "all_qa_documents": all_qa_documents,
                             "total_tokens_num":total_tokens_num,
-                            "document_language": kwargs.get("doc_language", "Chinese"),
+                            "document_language": "Chinese",
 
                         },
             )
+            thread_name +=1
             threads.append(document_format_thread)
             document_format_thread.start()
-            for thread in threads:
-                thread.join()
+        for thread in threads:
+            thread.join()
         loguru.logger.info(f"total_tokens_num:{sum(total_tokens_num)}")
         return all_qa_documents
 
@@ -137,7 +152,7 @@ class TextSFTDatasets():
 
         return [{"question": q, "answer": re.sub(r"\n\s*", "\n", a.strip())} for q, a in matches if q and a]
 
-    def build_sft_format(self,all_qa_documents):
+    def build_sft_format(self,all_qa_documents,handbook_name):
         sft_data_list = []
         for document in all_qa_documents:
             data = DatasetsTextSFTFormat(
@@ -147,8 +162,7 @@ class TextSFTDatasets():
             )
             sft_data_list.append(data.to_dict())
         if sft_data_list:
-            write_json_file_line(sft_data_list,"data\\handbook_dataset_sft.json")
-
+            write_json_file_line(sft_data_list,"data/handbook_dataset_sft_"+handbook_name+".json")
 
 
 def execute_text_sft_dataset():
@@ -158,11 +172,12 @@ def execute_text_sft_dataset():
     file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
     ##有问题
     file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
+    file_name = Path(file_path_tex)
     text_sft_dataset = TextSFTDatasets(file_path_tex)
     all_docs = text_sft_dataset.extract_text()
-    loguru.logger.info(f"text {len(all_docs)}")
+    loguru.logger.info(f"chunk text {len(all_docs)}")
     all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
-    text_sft_dataset.build_sft_format(all_qa_documents)
+    text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
     
 if __name__ == "__main__":
     execute_text_sft_dataset()
