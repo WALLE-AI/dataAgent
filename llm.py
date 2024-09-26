@@ -8,7 +8,7 @@ import httpx
 
 from entities.image_entity import ImageVlmModelOutPut
 from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
-from prompt import PROMPT_TEST
+from prompt import GENERATOR_QA_PROMPT_ZH, PROMPT_TEST
 from utils.helper import ddg_search_text
 
 MODEL_NAME_LIST = {
@@ -113,7 +113,7 @@ class LLMApi():
     
     
     @classmethod
-    def messages_stream_generator(cls,prompt,response):
+    def messages_stream_generator(cls,response):
         message_content = ""
         for text in response:
             ##finsh_reason获取usage内容
@@ -124,7 +124,8 @@ class LLMApi():
                 else:
                     ##total tokens
                     usage_info_dict['total_tokens'] = cls._get_num_tokens_by_gpt2(message_content)
-                message_content += text.choices[0].delta.content
+                if text.choices[0].delta.content:
+                    message_content += text.choices[0].delta.content
                 response_dict = ImageVlmModelOutPut(
                 model_name=text.model,
                 content=message_content,
@@ -150,7 +151,7 @@ class LLMApi():
     
     
     @classmethod
-    def call_llm(cls,prompt,stream=True,llm_type="siliconflow",model_name="Qwen/Qwen2.5-72B-Instruct"):
+    def call_llm(cls,prompt,stream=True,llm_type="siliconflow",model_name="Qwen/Qwen2.5-7B-Instruct"):
         '''
         默认选择siliconflow qwen2-72B的模型来
         '''
@@ -162,7 +163,7 @@ class LLMApi():
                 temperature=0.2,
             )
         if stream:
-            return cls.messages_stream_generator(prompt,llm_response)
+            return cls.messages_stream_generator(llm_response)
         else:
             response_dict = ImageVlmModelOutPut(
                 model_name=llm_response.model,
@@ -175,6 +176,16 @@ class LLMApi():
     @classmethod    
     def get_client(cls,llm_type):
         return cls().llm_client(llm_type)
+    
+def model_generate_qa_document(query, document_language: str):
+    ##TODO 这里prompt要更改一下
+    sytem_prompt = GENERATOR_QA_PROMPT_ZH.format(language=document_language)
+    # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
+    prompt = LLMApi.build_prompt(query,sytem_prompt)
+    response = LLMApi.call_llm(prompt)
+    answer = response["content"]
+    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query +" "+ sytem_prompt)+response['total_tokens']
+    return answer.strip(),response['total_tokens']
 
 def model_image_table_format_execute(data_dict, prompt,llm_type,model_name):
     build_prompt = LLMApi.build_image_prompt(prompt,data_dict['image_oss_url'])

@@ -8,7 +8,7 @@ import loguru
 
 from entities.dataset_sft_entity import DatasetsTextSFTFormat
 from entities.document import Document
-from llm import LLMApi
+from llm import LLMApi, model_generate_qa_document
 from parser.cleaner.clean_processor import CleanProcessor
 from parser.extract_processor import EtlType, ExtractProcessor
 from parser.markdown_extractor import MarkdownExtractor
@@ -16,7 +16,9 @@ from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
 from prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
 from utils.helper import generate_text_hash, write_json_file_line
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class TextSFTDatasets():
     def __init__(self, file_path):
@@ -102,14 +104,6 @@ class TextSFTDatasets():
         )
         return character_splitter
 
-    def _llm_generate_qa_document(self, query, document_language: str):
-        ##TODO 这里prompt要更改一下
-        prompt = GENERATOR_QA_PROMPT_ZH.format(language=document_language)
-        # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
-        prompt = LLMApi.build_prompt(query,prompt)
-        response = LLMApi.call_llm(prompt)
-        answer = response["content"]
-        return answer.strip(),response['total_tokens']
 
     def _format_qa_document(self, document_node, all_qa_documents, total_tokens_num,document_language):
         format_documents = []
@@ -117,7 +111,7 @@ class TextSFTDatasets():
             return
         try:
             # qa model document
-            response,total_tokens = self._llm_generate_qa_document(document_node.page_content, document_language)
+            response,total_tokens = model_generate_qa_document(document_node.page_content, document_language)
             total_tokens_num.append(total_tokens)
             document_qa_list = self._format_split_text(response)
             loguru.logger.info(f"document_qa_list:{document_qa_list}")
@@ -156,11 +150,12 @@ class TextSFTDatasets():
             write_json_file_line(sft_data_list,"data\\handbook_dataset_sft.json")
 
 
-def test_text_sft_dataset():
+
+def execute_text_sft_dataset():
     file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
     file_path_md = "data/test_readme.md"
     file_path_md = "data/handbook_test.md"
-    file_path_tex = "data/test.tex"
+    file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
     ##有问题
     file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
     text_sft_dataset = TextSFTDatasets(file_path_tex)
@@ -168,4 +163,7 @@ def test_text_sft_dataset():
     loguru.logger.info(f"text {len(all_docs)}")
     all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
     text_sft_dataset.build_sft_format(all_qa_documents)
+    
+if __name__ == "__main__":
+    execute_text_sft_dataset()
 
