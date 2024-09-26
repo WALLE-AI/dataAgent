@@ -1,6 +1,8 @@
 import argparse
 from pathlib import Path
+import threading
 import loguru
+from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import os
@@ -243,39 +245,61 @@ def write_tex_file(content,root_path,file_name,page_num=None):
         save_file_path = root_path + "/" +file_name +".tex"
     with open(save_file_path,"w",encoding="utf-8") as file:
         file.write(content)
+
+
+def semaphore_do_work(execute_function,semaphore,thread_name,model,tokenizer,image,type_ocr):
+    with semaphore:
+        loguru.logger.info(f"{thread_name} is working")
+        execute_function(model,tokenizer,image,type_ocr)
+        loguru.logger.info(f"{thread_name} is done")
+
+
+def get_directory_all_pdf_files(pdf_directory_path):
+    pdf_files = [pdf_directory_path + file for file in os.listdir(pdf_directory_path) if file.endswith(".pdf")]
+    return pdf_files
          
-def execute_gotocr2_model():
+def execute_gotocr2_model(pdf_file):
     model_name = os.getenv("MODEL_PATH_GOT")
-    image_file="data/test01_ocr2.0.png"
-    pdf_file = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.pdf"
+    # pdf_file = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.pdf"
     # image = load_image(image_file)
     pdf_file_path = Path(pdf_file)
     pdf_image = pdf_file_image(pdf_file)
     model,tokenizer = init_model(model_name)
     content_list = []
-    for index,image in enumerate(pdf_image):
-        type_ocr = "format"
-        content = inference_model(model,tokenizer,image,type_ocr)
-        content_list.append(content)
-        if index == 2:
-            break
+    type_ocr = "format"
+    max_threads = 5
+    semaphore = threading.Semaphore(max_threads)
+    thread_name = 0
+    threads = []
+    for index,image in tqdm(enumerate(pdf_image)):
+        # content = inference_model(model,tokenizer,image,type_ocr)
+        # content_list.append(content)
+        # if index == 2:
+        #     break
+        document_format_thread = threading.Thread(
+                        target=semaphore_do_work,
+                        kwargs={
+                            "execute_function": inference_model,
+                            "semaphore":semaphore,
+                            "thread_name":thread_name,
+                            "model": model,
+                            "tokenizer": tokenizer,
+                            "image":image,
+                            "type_ocr": type_ocr,
+                        },
+            )
+        thread_name +=1
+        threads.append(document_format_thread)
+        document_format_thread.start()
+    for thread in threads:
+        thread.join()
     content = "\n".join(content_list)
-    write_tex_file(content,"data/test_pdf_got",pdf_file_path.stem)
+    write_tex_file(content,"data/pdf_latex",pdf_file_path.stem)
     
+
+def execute_all_pdf_latex_preprocess():
+    pdf_dir_path =os.getenv("PDF_DIR_ROOT")
+    all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
+    for pdf_file in all_pdf_files:
+        execute_gotocr2_model(pdf_file)
     
-
-
-
-
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--model-name", type=str, default="facebook/opt-350m")
-#     parser.add_argument("--image-file", type=str, required=True)
-#     parser.add_argument("--type", type=str, required=True)
-#     parser.add_argument("--box", type=str, default= '')
-#     parser.add_argument("--color", type=str, default= '')
-#     parser.add_argument("--render", action='store_true')
-#     args = parser.parse_args()
-
-#     eval_model(args)

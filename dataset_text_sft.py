@@ -41,8 +41,8 @@ class TextSFTDatasets():
         max_threads = 5
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
+        threads = []
         for document in tqdm(documents[:10]):
-            threads = []
             document_format_thread = threading.Thread(
                         target=semaphore_do_work,
                         kwargs={
