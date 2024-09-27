@@ -8,7 +8,7 @@ import torch
 import os
 
 from parser.vision.utils.conversation import SeparatorStyle,conv_templates
-from parser.vision.utils.utils import disable_torch_init
+from parser.vision.utils.utils import disable_torch_init, get_directory_all_pdf_files
 from transformers import CLIPVisionModel, CLIPImageProcessor, StoppingCriteria
 from parser.vision.gotocr2.model import *
 from parser.vision.utils.utils import KeywordsStoppingCriteria
@@ -25,7 +25,7 @@ from transformers import TextStreamer
 import re
 import string
 
-from utils.helper import pdf_file_image
+from utils.helper import MeasureExecutionTime, pdf_file_image
 
 DEFAULT_IMAGE_TOKEN = "<image>"
 DEFAULT_IMAGE_PATCH_TOKEN = '<imgpad>'
@@ -55,6 +55,7 @@ def init_model(model_path):
     model = GOTQwenForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, device_map='cuda', use_safetensors=True, pad_token_id=151643).eval()
     return model,tokenizer
 
+@MeasureExecutionTime
 def inference_model(model,tokenizer,image,type):
     # Model
 
@@ -115,7 +116,7 @@ def inference_model(model,tokenizer,image,type):
     conv.append_message(conv.roles[1], None)
     prompt = conv.get_prompt()
 
-    print(prompt)
+    # print(prompt)
 
 
     inputs = tokenizer([prompt])
@@ -144,7 +145,7 @@ def inference_model(model,tokenizer,image,type):
             do_sample=False,
             num_beams = 1,
             no_repeat_ngram_size = 20,
-            streamer=streamer,
+            # streamer=streamer,
             max_new_tokens=4096,
             stopping_criteria=[stopping_criteria]
             )
@@ -253,10 +254,6 @@ def semaphore_do_work(execute_function,semaphore,thread_name,model,tokenizer,ima
         execute_function(model,tokenizer,image,type_ocr)
         loguru.logger.info(f"{thread_name} is done")
 
-
-def get_directory_all_pdf_files(pdf_directory_path):
-    pdf_files = [pdf_directory_path + file for file in os.listdir(pdf_directory_path) if file.endswith(".pdf")]
-    return pdf_files
          
 def execute_gotocr2_model(pdf_file):
     model_name = os.getenv("MODEL_PATH_GOT")
@@ -267,32 +264,31 @@ def execute_gotocr2_model(pdf_file):
     model,tokenizer = init_model(model_name)
     content_list = []
     type_ocr = "format"
-    max_threads = 5
-    semaphore = threading.Semaphore(max_threads)
-    thread_name = 0
-    threads = []
-    for index,image in tqdm(enumerate(pdf_image)):
-        # content = inference_model(model,tokenizer,image,type_ocr)
-        # content_list.append(content)
-        # if index == 2:
-        #     break
-        document_format_thread = threading.Thread(
-                        target=semaphore_do_work,
-                        kwargs={
-                            "execute_function": inference_model,
-                            "semaphore":semaphore,
-                            "thread_name":thread_name,
-                            "model": model,
-                            "tokenizer": tokenizer,
-                            "image":image,
-                            "type_ocr": type_ocr,
-                        },
-            )
-        thread_name +=1
-        threads.append(document_format_thread)
-        document_format_thread.start()
-    for thread in threads:
-        thread.join()
+    # #无法实现多线程推理
+    # max_threads = 1
+    # semaphore = threading.Semaphore(max_threads)
+    # thread_name = 0
+    # threads = []
+    for image in tqdm(pdf_image):
+        content = inference_model(model,tokenizer,image,type_ocr)
+        content_list.append(content)
+    #     document_format_thread = threading.Thread(
+    #                     target=semaphore_do_work,
+    #                     kwargs={
+    #                         "execute_function": inference_model,
+    #                         "semaphore":semaphore,
+    #                         "thread_name":thread_name,
+    #                         "model": model,
+    #                         "tokenizer": tokenizer,
+    #                         "image":image,
+    #                         "type_ocr": type_ocr,
+    #                     },
+    #         )
+    #     thread_name +=1
+    #     threads.append(document_format_thread)
+    #     document_format_thread.start()
+    # for thread in threads:
+    #     thread.join()
     content = "\n".join(content_list)
     write_tex_file(content,"data/pdf_latex",pdf_file_path.stem)
     
@@ -301,5 +297,6 @@ def execute_all_pdf_latex_preprocess():
     pdf_dir_path =os.getenv("PDF_DIR_ROOT")
     all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
     for pdf_file in all_pdf_files:
+        loguru.logger.info(f"pdf file: {pdf_file}")
         execute_gotocr2_model(pdf_file)
     

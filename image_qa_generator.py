@@ -86,7 +86,7 @@ def image_generator_conversation_index(data_json_file,llm_type,model_name,save_f
         max_threads = 5
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
-        for _data in tqdm(data[:13]):
+        for _data in tqdm(data[:1000]):
             if _data['image_id'] not in execute_exist_image_list:
                 loguru.logger.info(f"accident_label:{_data['accident_label']},description:{_data['description']}")
                 document_format_thread = threading.Thread(

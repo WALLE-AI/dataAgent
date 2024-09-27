@@ -16,6 +16,11 @@ moderation_msg = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE 
 handler = None
 
 
+def get_directory_all_pdf_files(pdf_directory_path):
+    pdf_files = [pdf_directory_path + file for file in os.listdir(pdf_directory_path) if file.endswith(".pdf")]
+    return pdf_files
+
+
 def build_logger(logger_name, logger_filename):
     global handler
 
