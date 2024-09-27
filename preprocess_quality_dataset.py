@@ -1,5 +1,6 @@
 
 import json
+import re
 import loguru
 from matplotlib.font_manager import FontProperties
 import pandas as pd
@@ -10,7 +11,7 @@ import seaborn as sns
 
 from entities.image_entity import ImageTableProcess
 from llm import LLMApi
-from prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL, QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE
+from prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL, QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, QUALITY_MAIN_STRUCTURE_RISK_LABEL, QUALITY_MAIN_STRUCTURE_RISK_PROMPT
 from utils.helper import download_image, load_images_from_folder, write_json_file
 font = FontProperties(fname=r'/home/dataset-s3-0/gaojing/llm/easy-rag/data/SimHei.ttf')
 
@@ -241,23 +242,29 @@ def analyze_main_structure_data(data_json_file):
         output_message_list = []
         user_total_tokens = 0
         for _data in data[:10]:
+            ##判断隐患类别中是否存在
             if _data['accident_label'] == "主体结构":
                 # prompt = QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL.replace("{content}",_data["description"])
                 prompt = QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE.replace("{content}",_data["description"])
                 prompt = LLMApi.build_prompt(prompt)
-                response = LLMApi.call_llm(prompt,llm_type="openrouter",model_name="openai/gpt-4o-mini-2024-07-18")
+                response = LLMApi.call_llm(prompt,llm_type="openrouter",model_name="qwen/qwen-2-vl-7b-instruct")
                 json_content = repair_json(response['content'], return_objects = True)
                 json_content_list=["",""]
                 if isinstance(json_content,dict):
                     json_content_list =[text for text in json_content.values()]
                 loguru.logger.info(f"reponse:{json_content}")
+                risk_part = ";".join(json_content_list)
+                risk_prompt = QUALITY_MAIN_STRUCTURE_RISK_PROMPT.format(risk_des=_data["description"],risk_part=risk_part)
+                risk_prompt = LLMApi.build_prompt(risk_prompt)
+                risk_response = LLMApi.call_llm(risk_prompt,llm_type="openrouter",model_name="qwen/qwen-2-vl-7b-instruct")
                 output_message={
                     "图片地址":_data["image_oss_url"],
                     "隐患描述":_data["description"],
                     "一级隐患类别":_data['accident_label'],
                     "二级隐患类别":json_content_list[0],
                     "三级隐患类别":json_content_list[1],
-                    "total_tokens":response['total_tokens']
+                    "total_tokens":response['total_tokens'],
+                    "llm_content":risk_response['content']
                 }
                 output_message_list.append(output_message)
                 user_total_tokens += response['total_tokens']

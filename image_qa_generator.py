@@ -4,13 +4,25 @@ import random
 import threading
 import timeit
 
+from json_repair import repair_json
 import loguru
 
-from llm import model_image_table_format_execute
-from prompt import STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT, STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
+from llm import LLMApi, model_image_table_format_execute
+from prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT, STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
 from tqdm import tqdm
 
 from utils.helper import MeasureExecutionTime, llm_result_postprocess, write_json_file_line
+
+
+def analyse_current_image_risk_labels(_data):
+    prompt = QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE.replace("{content}",_data["description"])
+    prompt = LLMApi.build_prompt(prompt)
+    response = LLMApi.call_llm(prompt,llm_type="openrouter",model_name="qwen/qwen-2-vl-7b-instruct")
+    json_content = repair_json(response['content'], return_objects = True)
+    json_content_list=["",""]
+    if isinstance(json_content,dict):
+        json_content_list =[text for text in json_content.values()]
+    loguru.logger.info(f"reponse:{json_content}")
 
 @MeasureExecutionTime
 def image_generator_conversation_data(data_dict,data_dict_list,tokens_list,llm_type,model_name):

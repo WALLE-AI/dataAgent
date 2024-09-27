@@ -218,6 +218,18 @@ QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE ='''
 '''
 
 
+QUALITY_MAIN_STRUCTURE_RISK_LABEL=[
+    "蜂窝麻面",
+    "麻面",
+    "漏筋"
+]
+
+QUALITY_MAIN_STRUCTURE_RISK_PROMPT='''
+你是一个建筑施工行业资深的质量检查员，你能够高精度判别出施工工地中施工质量风险，请根据用户的输入建筑施工工地图片和隐患部位进行高质量的回复
+隐患描述：{risk_des}
+隐患部位：{risk_part}
+'''
+
 
 #《建筑工程施工质量验收统一标准 GB 50300-2013》 附录 B建筑工程的分部工程、分项工程划分规定
 QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL = '''

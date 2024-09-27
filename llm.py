@@ -27,7 +27,9 @@ MODEL_NAME_LIST = {
         "meta-llama/llama-3-70b-instruct":"meta-llama/llama-3-70b-instruct",
         "mistralai/mistral-7b-instruct":"mistralai/mistral-7b-instruct",
         "openai/gpt-4o":"openai/gpt-4o",
-        "openai/gpt-4o-mini-2024-07-18":"openai/gpt-4o-mini-2024-07-18"
+        "openai/gpt-4o-mini-2024-07-18":"openai/gpt-4o-mini-2024-07-18",
+        "qwen/qwen-2-vl-72b-instruct":"qwen/qwen-2-vl-72b-instruct",
+        "qwen/qwen-2-vl-7b-instruct":"qwen/qwen-2-vl-7b-instruct"
     },
     "siliconflow":{
         "Qwen/Qwen2-7B-Instruct":"Qwen/Qwen2-7B-Instruct",
