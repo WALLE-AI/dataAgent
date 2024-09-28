@@ -20,3 +20,6 @@
 * https://pytorch.org/tutorials/beginner/knowledge_distillation_tutorial.html 知识蒸馏
 * Online DPO: Online Direct Preference Optimization with Fast-Slow Chasin
 * https://data-people-group.github.io/blogs/2024/09/24/docetl/
+* https://mp.weixin.qq.com/s/EpsakbZoyFm8_reKyh2scQ
+* 阿里巴巴提出LLaVA-MoD | 用MoE+知识蒸馏方法，即使2B参数也可干翻Qwen-VL-Chat-7B
+* SFT 数据筛选（三）：超进化篇

@@ -2,13 +2,15 @@ import os
 from pathlib import Path
 import loguru
 import numpy as np
+from parser.vision.deepdoc.layout_recognizer import LayoutRecognizer
 from parser.vision.deepdoc.ocr import OCR
+from parser.vision.deepdoc.recognizer import Recognizer
 from parser.vision.deepdoc.seeit import draw_box
 from parser.vision.utils.utils import get_directory_all_pdf_files
 from utils.helper import pdf_file_image
 
 
-def deepdoc_ocr_inference():
+def test_deepdoc_ocr_inference():
     pdf_dir_path = ""
     ocr = OCR()
     pdf_dir_path =os.getenv("PDF_DIR_ROOT")
@@ -30,3 +32,25 @@ def deepdoc_ocr_inference():
             img.save(save_name, quality=95)
             with open(save_name + ".txt", "w+") as f:
                 f.write("\n".join([o["text"] for o in bxs]))
+                
+def test_deepdoc_layout_recognizer_inference():
+    pdf_dir_path =os.getenv("PDF_DIR_ROOT")
+    all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
+    labels = LayoutRecognizer.labels
+    detr = Recognizer(
+            labels,
+            "layout",
+            os.getenv("DEEP_DOC_MODEL")
+    )
+    threshold=0.5
+    for pdf_file in all_pdf_files:
+        pdf_file_path = Path(pdf_file)
+        pdf_image = pdf_file_image(pdf_file)
+        loguru.logger.info(f"pdf file: {pdf_file}")
+        layouts = detr(pdf_image, float(threshold))
+        for index,lyt in enumerate(layouts):
+            img = draw_box(pdf_image[index], lyt, labels, float(threshold))
+            save_name ="data/deepdoc_test/"+pdf_file_path.stem+"_"+str(index)+".png"
+            img.save(save_name, quality=95)
+            print("save result to: " + save_name)
+                
