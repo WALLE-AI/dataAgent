@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import loguru
 import numpy as np
+from parser.vision.deepdoc.deepdoc_pdf_extractor import chunk
 from parser.vision.deepdoc.layout_recognizer import LayoutRecognizer
 from parser.vision.deepdoc.ocr import OCR
 from parser.vision.deepdoc.recognizer import Recognizer
@@ -53,4 +54,18 @@ def test_deepdoc_layout_recognizer_inference():
             save_name ="data/deepdoc_test/"+pdf_file_path.stem+"_"+str(index)+".png"
             img.save(save_name, quality=95)
             print("save result to: " + save_name)
+            
+            
+def deepdoc_ocr_pdf_text_extract():
+    def dummy(prog=None, msg=""):
+        pass
+    pdf_dir_path = ""
+    pdf_dir_path =os.getenv("PDF_DIR_ROOT")
+    all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
+    index = 0
+    for pdf_file in all_pdf_files:
+        loguru.logger.info(f"pdf file: {pdf_file}")
+        chunk("data/pdf/《中华人民共和国安全生产法》（2021 年修订版）.pdf", from_page=1, to_page=10, callback=dummy)
+        if index==0:
+            break
                 

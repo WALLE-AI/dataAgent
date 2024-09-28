@@ -39,7 +39,7 @@ class LayoutRecognizer(Recognizer):
 
     def __init__(self, domain):
         try:
-            model_dir = os.getenv("DEEP_DOC_MODEL")
+            model_dir = os.getenv("DEEP_DOC_MODEL")+"deepdoc"
             super().__init__(self.labels, domain, model_dir)
         except Exception as e:
             loguru.logger.info(f"no model exists for layout model")

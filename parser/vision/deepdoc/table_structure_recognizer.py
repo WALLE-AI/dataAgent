@@ -18,8 +18,8 @@ from collections import Counter
 import numpy as np
 from huggingface_hub import snapshot_download
 
-from api.utils.file_utils import get_project_base_directory
-from rag.nlp import rag_tokenizer
+from parser.vision.deepdoc.tokenizers import rag_tokenizer
+
 from .recognizer import Recognizer
 
 
@@ -35,12 +35,10 @@ class TableStructureRecognizer(Recognizer):
 
     def __init__(self):
         try:
-            super().__init__(self.labels, "tsr", os.path.join(
-                    get_project_base_directory(),
-                    "rag/res/deepdoc"))
+            super().__init__(self.labels, "tsr", os.getenv("DEEP_DOC_MODEL")+"deepdoc")
         except Exception as e:
             super().__init__(self.labels, "tsr", snapshot_download(repo_id="InfiniFlow/deepdoc",
-                                              local_dir=os.path.join(get_project_base_directory(), "rag/res/deepdoc"),
+                                              local_dir=os.getenv("DEEP_DOC_MODEL")+"deepdoc",
                                               local_dir_use_symlinks=False))
 
     def __call__(self, images, thr=0.2):

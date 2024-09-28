@@ -480,7 +480,7 @@ class OCR(object):
         """
         if not model_dir:
             try:
-                model_dir = os.getenv("DEEP_DOC_MODEL")
+                model_dir = os.getenv("DEEP_DOC_MODEL")+"deepdoc"
                 self.text_detector = TextDetector(model_dir)
                 self.text_recognizer = TextRecognizer(model_dir)
             except Exception as e:

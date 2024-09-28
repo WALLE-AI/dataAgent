@@ -33,10 +33,10 @@ class Recognizer(object):
 
         """
         if not model_dir:
-            model_dir = os.getenv("DEEP_DOC_MODEL")
+            model_dir = os.getenv("DEEP_DOC_MODEL")+"deepdoc"
             model_file_path = os.path.join(model_dir, task_name + ".onnx")
             if not os.path.exists(model_file_path):
-                model_dir = os.getenv("DEEP_DOC_MODEL")
+                model_dir = os.getenv("DEEP_DOC_MODEL")+"deepdoc"
                 model_file_path = os.path.join(model_dir, task_name + ".onnx")
         else:
             model_file_path = os.path.join(model_dir, task_name + ".onnx")
