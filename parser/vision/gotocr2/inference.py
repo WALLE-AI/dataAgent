@@ -7,6 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import os
 
+from llm import model_generate_latex_to_markdown
 from parser.vision.utils.conversation import SeparatorStyle,conv_templates
 from parser.vision.utils.utils import disable_torch_init, get_directory_all_pdf_files
 from transformers import CLIPVisionModel, CLIPImageProcessor, StoppingCriteria
@@ -271,6 +272,7 @@ def execute_gotocr2_model(pdf_file):
     # threads = []
     for image in tqdm(pdf_image):
         content = inference_model(model,tokenizer,image,type_ocr)
+        markdown_content = model_generate_latex_to_markdown(content)
         content_list.append(content)
     #     document_format_thread = threading.Thread(
     #                     target=semaphore_do_work,

@@ -8,7 +8,7 @@ import httpx
 
 from entities.image_entity import ImageVlmModelOutPut
 from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
-from prompt import GENERATOR_QA_PROMPT_ZH, PROMPT_TEST
+from prompt import GENERATOR_QA_PROMPT_ZH, LATEXT_TO_MARKDOWN_PROMPT, PROMPT_TEST
 from utils.helper import ddg_search_text
 
 MODEL_NAME_LIST = {
@@ -178,6 +178,16 @@ class LLMApi():
     @classmethod    
     def get_client(cls,llm_type):
         return cls().llm_client(llm_type)
+    
+def model_generate_latex_to_markdown(query,llm_type,model_name):
+    ##TODO 这里prompt要更改一下
+    sytem_prompt = LATEXT_TO_MARKDOWN_PROMPT.format(latex_content=query)
+    # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
+    prompt = LLMApi.build_prompt(query)
+    response = LLMApi.call_llm(prompt)
+    answer = response["content"]
+    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query +" "+ sytem_prompt)+response['total_tokens']
+    return answer.strip(),response['total_tokens']
     
 def model_generate_qa_document(query, document_language: str):
     ##TODO 这里prompt要更改一下

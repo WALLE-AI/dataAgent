@@ -230,6 +230,16 @@ QUALITY_MAIN_STRUCTURE_RISK_PROMPT='''
 隐患部位：{risk_part}
 '''
 
+LATEXT_TO_MARKDOWN_PROMPT='''
+你是一个文本转换器，能够高质量将Latex格式转成Markdown格式，根据用户输入的Latex文本高质量的转换成对应的Markdown格式，请按如下格式输出
+Latex:{latex_content}
+{    
+    "markdown": xxxxxxx
+}
+
+'''
+
+
 
 #《建筑工程施工质量验收统一标准 GB 50300-2013》 附录 B建筑工程的分部工程、分项工程划分规定
 QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL = '''
