@@ -28,9 +28,9 @@ class ImagesConversationData(BaseModel):
 
 class ImageVlmModelOutPut(BaseModel):
     prompt: str = "你是一个有用的助手"
-    model_name:str="dsdsad"
-    content: str = "shdhshadhsahd"
-    total_tokens: int = 122343
+    model_name:str="default model"
+    content: str = "llm no reponse generator"
+    total_tokens: int = 0
     def to_dict(self) -> dict:
         return jsonable_encoder(self)
 

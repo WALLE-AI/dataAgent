@@ -231,8 +231,9 @@ QUALITY_MAIN_STRUCTURE_RISK_PROMPT='''
 '''
 
 LATEXT_TO_MARKDOWN_PROMPT='''
-你是一个文本转换器，能够高质量将Latex格式转成Markdown格式，根据用户输入的Latex文本高质量的转换成对应的Markdown格式，请按如下格式输出
+你是一个文本转换器，能够高质量将Latex格式转成Markdown格式，根据用户输入的Latex文本高质量的转换成对应的Markdown格式.
 Latex:{latex_content}
+请按如下格式输出
 {    
     "markdown": xxxxxxx
 }

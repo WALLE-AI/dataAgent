@@ -92,7 +92,7 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
         sections = [(pr[0], "@" + pr[1]) if len(pr) == 2 else (pr[0], '') for pr in sections ]
         chunks = naive_merge(
             sections, kwargs.get(
-                "chunk_token_num", 256), kwargs.get(
+                "chunk_token_num", 1024), kwargs.get(
                 "delimer", "\n。；！？"))
 
     # is it English
@@ -103,11 +103,3 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
     res.extend(tokenize_chunks(chunks, doc, eng, pdf_parser))
 
     return res
-
-
-if __name__ == "__main__":
-    import sys
-
-    def dummy(prog=None, msg=""):
-        pass
-    chunk(sys.argv[1], from_page=1, to_page=10, callback=dummy)

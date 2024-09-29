@@ -137,7 +137,9 @@ class LLMApi():
             else:
                 if text.choices[0].delta.content:
                     message_content += text.choices[0].delta.content
-        return {}
+        ##如果没有就返回为默认
+        response_dict = ImageVlmModelOutPut()
+        return response_dict.to_dict()
     @classmethod
     def _get_num_tokens_by_gpt2(self, text: str) -> int:
         """
@@ -179,14 +181,13 @@ class LLMApi():
     def get_client(cls,llm_type):
         return cls().llm_client(llm_type)
     
-def model_generate_latex_to_markdown(query,llm_type,model_name):
+def model_generate_latex_to_markdown(query):
     ##TODO 这里prompt要更改一下
-    sytem_prompt = LATEXT_TO_MARKDOWN_PROMPT.format(latex_content=query)
-    # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
-    prompt = LLMApi.build_prompt(query)
+    prompt = LATEXT_TO_MARKDOWN_PROMPT.replace("{latex_content}",query)
+    prompt = LLMApi.build_prompt(prompt)
     response = LLMApi.call_llm(prompt)
     answer = response["content"]
-    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query +" "+ sytem_prompt)+response['total_tokens']
+    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query)+response['total_tokens']
     return answer.strip(),response['total_tokens']
     
 def model_generate_qa_document(query, document_language: str):

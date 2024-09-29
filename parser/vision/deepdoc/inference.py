@@ -65,7 +65,7 @@ def deepdoc_ocr_pdf_text_extract():
     index = 0
     for pdf_file in all_pdf_files:
         loguru.logger.info(f"pdf file: {pdf_file}")
-        chunk("data/pdf/《中华人民共和国安全生产法》（2021 年修订版）.pdf", from_page=1, to_page=10, callback=dummy)
+        chunk("data/pdf/《砌体结构工程施工质量验收规范 GB50203-2011》.pdf", from_page=1, to_page=10000, callback=dummy)
         if index==0:
             break
                 

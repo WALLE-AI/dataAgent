@@ -26,7 +26,7 @@ from transformers import TextStreamer
 import re
 import string
 
-from utils.helper import MeasureExecutionTime, pdf_file_image
+from utils.helper import MeasureExecutionTime, llm_result_postprocess, pdf_file_image
 
 DEFAULT_IMAGE_TOKEN = "<image>"
 DEFAULT_IMAGE_PATCH_TOKEN = '<imgpad>'
@@ -240,11 +240,11 @@ def inference_model(model,tokenizer,image,type):
 
 
     
-def write_tex_file(content,root_path,file_name,page_num=None):
+def write_tex_file(content,root_path,file_name,format,page_num=None):
     if page_num:
-        save_file_path = root_path + "/" +file_name+"_"+str(page_num)+".tex"
+        save_file_path = root_path + "/" +file_name+"_"+str(page_num)+format
     else:
-        save_file_path = root_path + "/" +file_name +".tex"
+        save_file_path = root_path + "/" +file_name +format
     with open(save_file_path,"w",encoding="utf-8") as file:
         file.write(content)
 
@@ -264,35 +264,26 @@ def execute_gotocr2_model(pdf_file):
     pdf_image = pdf_file_image(pdf_file)
     model,tokenizer = init_model(model_name)
     content_list = []
+    markdown_content_list=[]
     type_ocr = "format"
-    # #无法实现多线程推理
-    # max_threads = 1
-    # semaphore = threading.Semaphore(max_threads)
-    # thread_name = 0
-    # threads = []
+    index = 0
     for image in tqdm(pdf_image):
         content = inference_model(model,tokenizer,image,type_ocr)
-        markdown_content = model_generate_latex_to_markdown(content)
+        markdown_content,total_tokens = model_generate_latex_to_markdown(content)
+        all_total_tokens += total_tokens
+        markdown_content = llm_result_postprocess(markdown_content)
+        if isinstance(markdown_content,dict) and "markdown" in markdown_content:
+            markdown_text = markdown_content['markdown']
+            markdown_content_list.append(markdown_text)
         content_list.append(content)
-    #     document_format_thread = threading.Thread(
-    #                     target=semaphore_do_work,
-    #                     kwargs={
-    #                         "execute_function": inference_model,
-    #                         "semaphore":semaphore,
-    #                         "thread_name":thread_name,
-    #                         "model": model,
-    #                         "tokenizer": tokenizer,
-    #                         "image":image,
-    #                         "type_ocr": type_ocr,
-    #                     },
-    #         )
-    #     thread_name +=1
-    #     threads.append(document_format_thread)
-    #     document_format_thread.start()
-    # for thread in threads:
-    #     thread.join()
+        index +=1
+        if index == 10:
+            break
     content = "\n".join(content_list)
-    write_tex_file(content,"data/pdf_latex",pdf_file_path.stem)
+    markdown_content = "\n".join(markdown_content_list)
+    write_tex_file(markdown_content,"data/pdf_markdown",".md",pdf_file_path.stem)
+    write_tex_file(content,"data/pdf_latex",".tex",pdf_file_path.stem)
+    loguru.logger.info("{pdf_file_path.stem} all_total_tokens:{all_total_tokens}")
     
 
 def execute_all_pdf_latex_preprocess():

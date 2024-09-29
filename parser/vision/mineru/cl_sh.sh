@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=1 magic-pdf -p /home/dataset-s3-0/gaojing/llm/starAgent/data/test.pdf -o /home/dataset-s3-0/gaojing/llm/starAgent/data/test.md -m auto
