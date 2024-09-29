@@ -1,4 +1,5 @@
 ##解析抽取手册数据，进行chunk后 对chunk数据进行QA抽取
+import os
 from pathlib import Path
 import re
 import threading
@@ -15,6 +16,7 @@ from parser.extract_processor import EtlType, ExtractProcessor
 from parser.markdown_extractor import MarkdownExtractor
 from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
+from parser.vision.utils.utils import get_directory_all_tex_files
 from prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
 from utils.helper import generate_text_hash, write_json_file_line
 from dotenv import load_dotenv
@@ -42,7 +44,7 @@ class TextSFTDatasets():
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
         threads = []
-        for document in tqdm(documents[:10]):
+        for document in tqdm(documents[10:]):
             document_format_thread = threading.Thread(
                         target=semaphore_do_work,
                         kwargs={
@@ -153,10 +155,12 @@ class TextSFTDatasets():
         return [{"question": q, "answer": re.sub(r"\n\s*", "\n", a.strip())} for q, a in matches if q and a]
 
     def build_sft_format(self,all_qa_documents,handbook_name):
+        handbook_name = "《"+handbook_name+"》"
+        instruction = '''使用{name}知识内容回答建筑专业性问题'''.format(name=handbook_name)
         sft_data_list = []
         for document in all_qa_documents:
             data = DatasetsTextSFTFormat(
-                instruction="",
+                instruction=instruction,
                 input=document.page_content,
                 output=document.metadata["answer"]
             )
@@ -165,20 +169,32 @@ class TextSFTDatasets():
             write_json_file_line(sft_data_list,"data/handbook_dataset_sft_"+handbook_name+".json")
 
 
+# def execute_text_sft_dataset():
+#     file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
+#     file_path_md = "data/test_readme.md"
+#     file_path_md = "data/handbook_test.md"
+#     file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
+#     ##有问题
+#     file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
+#     file_name = Path(file_path_tex)
+#     text_sft_dataset = TextSFTDatasets(file_path_tex)
+#     all_docs = text_sft_dataset.extract_text()
+#     loguru.logger.info(f"chunk text {len(all_docs)}")
+#     all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
+#     text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
+
 def execute_text_sft_dataset():
-    file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
-    file_path_md = "data/test_readme.md"
-    file_path_md = "data/handbook_test.md"
-    file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
-    ##有问题
-    file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
-    file_name = Path(file_path_tex)
-    text_sft_dataset = TextSFTDatasets(file_path_tex)
-    all_docs = text_sft_dataset.extract_text()
-    loguru.logger.info(f"chunk text {len(all_docs)}")
-    all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
-    text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
-    
-if __name__ == "__main__":
-    execute_text_sft_dataset()
+    tex_files = os.getenv("TEX_DIR_ROOT")
+    all_tex_path = get_directory_all_tex_files(tex_files)
+    index = 0
+    for text_file_path in all_tex_path:
+        text_sft_dataset = TextSFTDatasets(text_file_path)
+        # tex_file_name = Path(text_file_path).stem
+        all_docs = text_sft_dataset.extract_text()
+        loguru.logger.info(f"chunk text {len(all_docs)}")
+        all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
+        text_sft_dataset.build_sft_format(all_qa_documents,Path(text_file_path).stem)
+        if index ==0:
+            break  
+
 

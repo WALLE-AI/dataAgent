@@ -155,7 +155,7 @@ class LLMApi():
     
     
     @classmethod
-    def call_llm(cls,prompt,stream=True,llm_type="siliconflow",model_name="Qwen/Qwen2.5-7B-Instruct"):
+    def call_llm(cls,prompt,stream=True,llm_type="siliconflow",model_name="Qwen/Qwen2.5-72B-Instruct"):
         '''
         默认选择siliconflow qwen2-72B的模型来
         '''
