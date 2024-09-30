@@ -11,7 +11,7 @@ import seaborn as sns
 
 from entities.image_entity import ImageTableProcess
 from llm import LLMApi
-from prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL, QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, QUALITY_MAIN_STRUCTURE_RISK_LABEL, QUALITY_MAIN_STRUCTURE_RISK_PROMPT
+from prompt.prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL, QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, QUALITY_MAIN_STRUCTURE_RISK_LABEL, QUALITY_MAIN_STRUCTURE_RISK_PROMPT
 from utils.helper import download_image, load_images_from_folder, write_json_file
 font = FontProperties(fname=r'/home/dataset-s3-0/gaojing/llm/easy-rag/data/SimHei.ttf')
 
