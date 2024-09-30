@@ -156,87 +156,6 @@ def inference_model(model,tokenizer,image,type):
             outputs = outputs[:-len(stop_str)]
         outputs = outputs.strip()
         return outputs
-        # if args.render:
-        #     print('==============rendering===============')
-
-        #     outputs = tokenizer.decode(output_ids[0, input_ids.shape[1]:]).strip()
-            
-        #     if outputs.endswith(stop_str):
-        #         outputs = outputs[:-len(stop_str)]
-        #     outputs = outputs.strip()
-
-        #     if '**kern' in outputs:
-        #         import verovio
-        #         from cairosvg import svg2png
-        #         import cv2
-        #         import numpy as np
-        #         tk = verovio.toolkit()
-        #         tk.loadData(outputs)
-        #         tk.setOptions({"pageWidth": 2100, "footer": 'none',
-        #        'barLineWidth': 0.5, 'beamMaxSlope': 15,
-        #        'staffLineWidth': 0.2, 'spacingStaff': 6})
-        #         tk.getPageCount()
-        #         svg = tk.renderToSVG()
-        #         svg = svg.replace("overflow=\"inherit\"", "overflow=\"visible\"")
-
-        #         svg_to_html(svg, "./results/demo.html")
-
-        #     if args.type == 'format' and '**kern' not in outputs:
-
-                
-        #         if  '\\begin{tikzpicture}' not in outputs:
-        #             html_path = "./render_tools/" + "/content-mmd-to-html.html"
-        #             html_path_2 = "./results/demo.html"
-        #             right_num = outputs.count('\\right')
-        #             left_num = outputs.count('\left')
-
-        #             if right_num != left_num:
-        #                 outputs = outputs.replace('\left(', '(').replace('\\right)', ')').replace('\left[', '[').replace('\\right]', ']').replace('\left{', '{').replace('\\right}', '}').replace('\left|', '|').replace('\\right|', '|').replace('\left.', '.').replace('\\right.', '.')
-
-
-        #             outputs = outputs.replace('"', '``').replace('$', '')
-
-        #             outputs_list = outputs.split('\n')
-        #             gt= ''
-        #             for out in outputs_list:
-        #                 gt +=  '"' + out.replace('\\', '\\\\') + r'\n' + '"' + '+' + '\n' 
-                    
-        #             gt = gt[:-2]
-
-        #             with open(html_path, 'r') as web_f:
-        #                 lines = web_f.read()
-        #                 lines = lines.split("const text =")
-        #                 new_web = lines[0] + 'const text ='  + gt  + lines[1]
-        #         else:
-        #             html_path = "./render_tools/" + "/tikz.html"
-        #             html_path_2 = "./results/demo.html"
-        #             outputs = outputs.translate(translation_table)
-        #             outputs_list = outputs.split('\n')
-        #             gt= ''
-        #             for out in outputs_list:
-        #                 if out:
-        #                     if '\\begin{tikzpicture}' not in out and '\\end{tikzpicture}' not in out:
-        #                         while out[-1] == ' ':
-        #                             out = out[:-1]
-        #                             if out is None:
-        #                                 break
-    
-        #                         if out:
-        #                             if out[-1] != ';':
-        #                                 gt += out[:-1] + ';\n'
-        #                             else:
-        #                                 gt += out + '\n'
-        #                     else:
-        #                         gt += out + '\n'
-
-
-        #             with open(html_path, 'r') as web_f:
-        #                 lines = web_f.read()
-        #                 lines = lines.split("const text =")
-        #                 new_web = lines[0] + gt + lines[1]
-
-        #         with open(html_path_2, 'w') as web_f_new:
-        #             web_f_new.write(new_web)
 
 
     
@@ -255,8 +174,20 @@ def semaphore_do_work(execute_function,semaphore,thread_name,model,tokenizer,ima
         execute_function(model,tokenizer,image,type_ocr)
         loguru.logger.info(f"{thread_name} is done")
 
+
+def execute_gotocr2_model(model,tokenizer,pdf_file):
+    pdf_image = pdf_file_image(pdf_file)
+    content_list = []
+    type_ocr = "format"
+    for image in tqdm(pdf_image):
+        content = inference_model(model,tokenizer,image,type_ocr)
+        content_list.append(content)
+    content = "\n".join(content_list)
+    return content_list,content
+
+
          
-def execute_gotocr2_model(pdf_file):
+def test_execute_gotocr2_model(pdf_file):
     model_name = os.getenv("MODEL_PATH_GOT")
     # pdf_file = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.pdf"
     # image = load_image(image_file)
@@ -291,5 +222,5 @@ def execute_all_pdf_latex_preprocess():
     all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
     for pdf_file in all_pdf_files:
         loguru.logger.info(f"pdf file: {pdf_file}")
-        execute_gotocr2_model(pdf_file)
+        test_execute_gotocr2_model(pdf_file)
     

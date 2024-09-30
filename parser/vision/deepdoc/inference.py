@@ -55,7 +55,7 @@ def test_deepdoc_layout_recognizer_inference():
             img.save(save_name, quality=95)
             print("save result to: " + save_name)
             
-            
+      
 def deepdoc_ocr_pdf_text_extract():
     def dummy(prog=None, msg=""):
         pass
@@ -68,4 +68,4 @@ def deepdoc_ocr_pdf_text_extract():
         chunk("data/pdf/《砌体结构工程施工质量验收规范 GB50203-2011》.pdf", from_page=1, to_page=10000, callback=dummy)
         if index==0:
             break
-                
+            

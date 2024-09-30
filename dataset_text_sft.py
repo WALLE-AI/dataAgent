@@ -16,7 +16,7 @@ from parser.extract_processor import EtlType, ExtractProcessor
 from parser.markdown_extractor import MarkdownExtractor
 from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
-from parser.vision.utils.utils import get_directory_all_tex_files
+from parser.vision.utils.utils import get_directory_all_pdf_files, get_directory_all_tex_files
 from prompt.prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
 from utils.helper import generate_text_hash, write_json_file_line
 from dotenv import load_dotenv
@@ -34,8 +34,8 @@ class TextSFTDatasets():
     def __init__(self, file_path):
         self.file_path = file_path
         
-    def extract_text(self):
-        return ExtractProcessor.extract(self.file_path)
+    def extract_text(self,etl_type):
+        return ExtractProcessor.extract(self.file_path,etl_type)
     
     def chunk_text_to_qa_unstructured(self, documents: list[Document], **kwargs) -> list[Document]:
         all_qa_documents = []
@@ -44,7 +44,7 @@ class TextSFTDatasets():
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
         threads = []
-        for document in tqdm(documents[10:]):
+        for document in tqdm(documents[:10]):
             document_format_thread = threading.Thread(
                         target=semaphore_do_work,
                         kwargs={
@@ -184,13 +184,14 @@ class TextSFTDatasets():
 #     text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
 
 def execute_text_sft_dataset():
-    tex_files = os.getenv("TEX_DIR_ROOT")
-    all_tex_path = get_directory_all_tex_files(tex_files)
+    tex_files = os.getenv("PDF_DIR_ROOT")
+    all_tex_path = get_directory_all_pdf_files(tex_files)
     index = 0
+    etl_type = "Vision"
     for text_file_path in all_tex_path:
         text_sft_dataset = TextSFTDatasets(text_file_path)
         # tex_file_name = Path(text_file_path).stem
-        all_docs = text_sft_dataset.extract_text()
+        all_docs = text_sft_dataset.extract_text(etl_type)
         loguru.logger.info(f"chunk text {len(all_docs)}")
         all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
         text_sft_dataset.build_sft_format(all_qa_documents,Path(text_file_path).stem)
