@@ -17,7 +17,7 @@ from parser.markdown_extractor import MarkdownExtractor
 from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
 from parser.vision.utils.utils import get_directory_all_tex_files
-from prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
+from prompt.prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
 from utils.helper import generate_text_hash, write_json_file_line
 from dotenv import load_dotenv
 

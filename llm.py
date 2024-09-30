@@ -8,7 +8,7 @@ import httpx
 
 from entities.image_entity import ImageVlmModelOutPut
 from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
-from prompt import GENERATOR_QA_PROMPT_ZH, LATEXT_TO_MARKDOWN_PROMPT, PROMPT_TEST
+from prompt.prompt import GENERATOR_QA_PROMPT_ZH, LATEXT_TO_MARKDOWN_PROMPT, PROMPT_TEST
 from utils.helper import ddg_search_text
 
 MODEL_NAME_LIST = {
