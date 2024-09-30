@@ -42,6 +42,7 @@ MODEL_NAME_LIST = {
     },
     "localhost":{
         "intern_vl":"intern_vl",
+        "qwen2":"qwen2"
     }
     
 }
@@ -195,7 +196,7 @@ def model_generate_qa_document(query, document_language: str):
     sytem_prompt = GENERATOR_QA_PROMPT_ZH.format(language=document_language)
     # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
     prompt = LLMApi.build_prompt(query,sytem_prompt)
-    response = LLMApi.call_llm(prompt)
+    response = LLMApi.call_llm(prompt,llm_type="localhost",model_name="qwen2")
     answer = response["content"]
     response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query +" "+ sytem_prompt)+response['total_tokens']
     return answer.strip(),response['total_tokens']

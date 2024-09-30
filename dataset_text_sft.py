@@ -166,7 +166,7 @@ class TextSFTDatasets():
             )
             sft_data_list.append(data.to_dict())
         if sft_data_list:
-            write_json_file_line(sft_data_list,"data/handbook_dataset_sft_"+handbook_name+".json")
+            write_json_file_line(sft_data_list,"data/handbook_sft/handbook_dataset_sft_"+handbook_name+".json")
 
 
 # def execute_text_sft_dataset():
