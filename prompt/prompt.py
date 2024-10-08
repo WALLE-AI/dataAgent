@@ -111,6 +111,27 @@ Given text:
 Please generate question-answer pairs based on this text.
 """
 
+
+
+GENERATOR_ANSWER_PROMPT_EN_2 = '''
+The background knowledge is:
+{unsupervised_knowledge_data}
+Please answer the following question based on the
+content of the article above:
+{the_generated_question}
+Please answer this question as thoroughly as possible,
+but do not change the key information in the original
+text, and do not include expressions such as “based
+on the above article” in the answer.
+You must answer in {language}, in a style that is clear and detailed in {language}.
+No language other than {language} should be used. 
+Please generate the corresponding answer in the following format:
+Question: ...
+Answer: ...
+
+'''
+
+
 GENERATOR_QA_PROMPT_ZH_1 = '''基于以下给定的文本，生成一组高质量的问答对。请遵循以下指南：
 
             1. 问题部分：

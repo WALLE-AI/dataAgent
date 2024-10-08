@@ -1,4 +1,5 @@
 ##解析抽取手册数据，进行chunk后 对chunk数据进行QA抽取
+import json
 import os
 from pathlib import Path
 import re
@@ -18,7 +19,7 @@ from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
 from parser.vision.utils.utils import get_directory_all_pdf_files, get_directory_all_tex_files
 from prompt.prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
-from utils.helper import generate_text_hash, write_json_file_line
+from utils.helper import generate_text_hash, get_directory_all_json_files, write_json_file_line
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -196,6 +197,17 @@ def execute_text_sft_dataset():
         all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
         text_sft_dataset.build_sft_format(all_qa_documents,Path(text_file_path).stem)
         if index ==0:
-            break  
+            break
+def execute_text_sft_datatsets_merge():
+    json_dir = "data/handbook_sft/"
+    json_files = get_directory_all_json_files(json_dir)
+    all_data_list = []
+    for file in json_files:
+        with open(file,"r",encoding="utf-8") as file:
+            for line in file:
+                data  = json.loads(line)
+                all_data_list.append(data)
+    write_json_file_line(all_data_list,"data/handbook_sft/handbook_dataset_sft_all.json")
+    loguru.logger.info(f"all data list {all_data_list}")  
 
 

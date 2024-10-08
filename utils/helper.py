@@ -68,6 +68,10 @@ def detect_file_encodings(file_path: str, timeout: int = 5) -> list[FileEncoding
     return [FileEncoding(**enc) for enc in encodings if enc["encoding"] is not None]
 
 
+def get_directory_all_json_files(tex_directory_path):
+    tex_files = [tex_directory_path + file for file in os.listdir(tex_directory_path) if file.endswith(".json")]
+    return tex_files
+
 
 
 def generate_text_hash(text: str) -> str:
