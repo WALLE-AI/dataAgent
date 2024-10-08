@@ -11,6 +11,8 @@
 #  limitations under the License.
 #
 import copy
+import os
+from pathlib import Path
 from tika import parser
 import re
 from io import BytesIO
@@ -53,6 +55,23 @@ class Pdf(PdfParser):
 
         return [(b["text"] + self._line_tag(b, zoomin), b.get("layoutno", ""))
                 for b in self.boxes], tbls
+
+def save_table_images(res_list):
+    '''
+    {'docnm_kwd': 'D:/InnovationProject/WALLE-AI/dataAgent/data/pdf/GB_50203-2011砌体结构工程施工质量验收规范.pdf',
+    'title_tks': ' d : / innovationproject / walle-ai / dataag / data / pdf / gb _ 50203-2011 砌体 结构 工程施工 质量 验收 规范', 
+    'title_sm_tks': ' d : / innovationproject / walle-ai / dataag / data / pdf / gb _ 50203-2011 砌体 结构 工程 施工 质量 验收 规范',
+    'content_with_weight': '10 Winter Construction ',
+    'content_ltks': '10 winter construct', 'content_sm_ltks': 
+    '10 winter construct', 'image': <PIL.Image.Image image mode=RGB size=345x31 at 0x247717138B0>, 
+    'page_num_int': [9], 'position_int': [(...)], 'top_int': [43]}
+    '''
+    for table_images in res_list:
+        file_name = Path(table_images['docnm_kwd']).stem
+        page_num = table_images['page_num_int'][0]
+        tabel_images_save_path = os.getenv('TABLE_IMAGES_SAVE')
+        save_image_name = tabel_images_save_path +file_name +"_"+str(page_num)+"_"+".png"
+        table_images["image"].save(save_image_name)
 
 
 def chunk(filename, binary=None, from_page=0, to_page=100000,
@@ -100,6 +119,8 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
     eng = lang.lower() == "english"
 
     res = tokenize_table(tbls, doc, eng)
+    ##保存table数据图片
+    save_table_images(res)
     res.extend(tokenize_chunks(chunks, doc, eng, pdf_parser))
 
     return res

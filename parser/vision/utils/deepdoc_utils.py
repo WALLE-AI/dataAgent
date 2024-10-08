@@ -334,7 +334,6 @@ def tokenize_chunks_docx(chunks, doc, eng, images):
         res.append(d)
     return res
 
-
 def tokenize_table(tbls, doc, eng, batch_size=10):
     res = []
     # add tables

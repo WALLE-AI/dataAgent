@@ -45,11 +45,11 @@ class PdfParser:
         self.tbl_det = TableStructureRecognizer()
 
         self.updown_cnt_mdl = xgb.Booster()
-        LIGHTEN = os.getenv("LIGHTEN")
-        if not LIGHTEN:
-            import torch
-            if torch.cuda.is_available():
-                self.updown_cnt_mdl.set_param({"device": "cuda"})
+        # LIGHTEN = os.getenv("LIGHTEN")
+        # if not LIGHTEN:
+        import torch
+        if torch.cuda.is_available():
+            self.updown_cnt_mdl.set_param({"device": "cuda"})
         try:
             model_dir = os.getenv("DEEP_DOC_MODEL") +"deepdoc"
             self.updown_cnt_mdl.load_model(os.path.join(

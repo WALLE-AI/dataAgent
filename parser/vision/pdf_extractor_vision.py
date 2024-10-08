@@ -53,7 +53,7 @@ class PdfVisionExtractor(BaseExtractor):
         def dummy(prog=None, msg=""):
             pass
         ##解析后直接chunk
-        doc_res = chunk(self._file_path, from_page=1, to_page=10000, callback=dummy)
+        doc_res = chunk(self._file_path, from_page=1, to_page=100000, callback=dummy)
         documents=[]
         for doc in doc_res:
            metadata = {"source": doc['docnm_kwd'], "page": doc["docnm_kwd"]}
