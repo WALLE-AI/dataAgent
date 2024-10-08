@@ -193,12 +193,12 @@ def model_generate_latex_to_markdown(query):
     
 def model_generate_qa_document(query, document_language: str):
     ##TODO 这里prompt要更改一下
-    sytem_prompt = GENERATOR_QA_PROMPT_ZH.format(language=document_language)
+    query_prompt = GENERATOR_QA_PROMPT_ZH.format(knowledge_data=query,language=document_language)
     # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
-    prompt = LLMApi.build_prompt(query,sytem_prompt)
+    prompt = LLMApi.build_prompt(query_prompt)
     response = LLMApi.call_llm(prompt,llm_type="localhost",model_name="qwen2")
     answer = response["content"]
-    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query +" "+ sytem_prompt)+response['total_tokens']
+    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query_prompt)+response['total_tokens']
     return answer.strip(),response['total_tokens']
 
 def model_image_table_format_execute(data_dict, prompt,llm_type,model_name):
