@@ -7,6 +7,7 @@ class DatasetsTextSFTFormat(BaseModel):
     instruction:str=""
     input:str=""
     output:str=""
+    context:str=""
 
     def to_dict(self) -> dict:
         return jsonable_encoder(self)

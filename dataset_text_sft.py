@@ -166,7 +166,8 @@ class TextSFTDatasets():
             data = DatasetsTextSFTFormat(
                 instruction=instruction,
                 input=document.page_content,
-                output=document.metadata["answer"]
+                output=document.metadata["answer"],
+                context = document.metadata["context"]
             )
             sft_data_list.append(data.to_dict())
         if sft_data_list:
@@ -199,8 +200,6 @@ def execute_text_sft_dataset():
         loguru.logger.info(f"chunk text {len(all_docs)}")
         all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
         text_sft_dataset.build_sft_format(all_qa_documents,Path(text_file_path).stem)
-        if index ==0:
-            break
 def execute_text_sft_datatsets_merge():
     json_dir = "data/handbook_sft/"
     json_files = get_directory_all_json_files(json_dir)
