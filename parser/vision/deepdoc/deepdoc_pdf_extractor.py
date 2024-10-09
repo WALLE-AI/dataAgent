@@ -22,6 +22,7 @@ from parser.vision.deepdoc.tokenizers import rag_tokenizer
 from parser.vision.utils.deepdoc_utils import bullets_category,is_english, tokenize, remove_contents_table, \
     hierarchical_merge, make_colon_as_title, naive_merge, random_choices, tokenize_table, add_positions, \
     tokenize_chunks, find_codec
+from utils.helper import write_json_file_line
     
 
 
@@ -56,7 +57,7 @@ class Pdf(PdfParser):
         return [(b["text"] + self._line_tag(b, zoomin), b.get("layoutno", ""))
                 for b in self.boxes], tbls
 
-def save_table_images(res_list):
+def save_table_images(res_list,to_markdow=None):
     '''
     {'docnm_kwd': 'D:/InnovationProject/WALLE-AI/dataAgent/data/pdf/GB_50203-2011砌体结构工程施工质量验收规范.pdf',
     'title_tks': ' d : / innovationproject / walle-ai / dataag / data / pdf / gb _ 50203-2011 砌体 结构 工程施工 质量 验收 规范', 
@@ -66,13 +67,21 @@ def save_table_images(res_list):
     '10 winter construct', 'image': <PIL.Image.Image image mode=RGB size=345x31 at 0x247717138B0>, 
     'page_num_int': [9], 'position_int': [(...)], 'top_int': [43]}
     '''
+    markdow_content_list = []
     for table_images in res_list:
+        markdow_content_dict = {}
         file_name = Path(table_images['docnm_kwd']).stem
         page_num = table_images['page_num_int'][0]
         tabel_images_save_path = os.getenv('TABLE_IMAGES_SAVE')
         save_image_name = tabel_images_save_path +file_name +"_"+str(page_num)+"_"+".png"
+        markdow_content_dict["image"] = file_name +"_"+str(page_num)+"_"+".png"
+        markdow_content_dict['markdown'] = table_images['content_with_weight']
+        markdow_content_list.append(markdow_content_dict)
         table_images["image"].save(save_image_name)
-
+    if to_markdow and markdow_content_list:
+        save_markdown_file_name = tabel_images_save_path +file_name+".json"
+        write_json_file_line(markdow_content_list,save_markdown_file_name)
+                
 
 def chunk(filename, binary=None, from_page=0, to_page=100000,
           lang="Chinese", callback=None, **kwargs):
@@ -120,7 +129,7 @@ def chunk(filename, binary=None, from_page=0, to_page=100000,
 
     res = tokenize_table(tbls, doc, eng)
     ##保存table数据图片
-    save_table_images(res)
+    save_table_images(res,to_markdow=True)
     res.extend(tokenize_chunks(chunks, doc, eng, pdf_parser))
 
     return res

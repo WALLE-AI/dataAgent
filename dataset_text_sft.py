@@ -45,7 +45,7 @@ class TextSFTDatasets():
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
         threads = []
-        for document in tqdm(documents[:10]):
+        for document in tqdm(documents[10:]):
             # document clean
             document_text = CleanProcessor.clean(document.page_content, True)
             document.page_content = document_text
