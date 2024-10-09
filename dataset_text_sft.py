@@ -46,6 +46,9 @@ class TextSFTDatasets():
         thread_name = 0
         threads = []
         for document in tqdm(documents[:10]):
+            # document clean
+            document_text = CleanProcessor.clean(document.page_content, True)
+            document.page_content = document_text
             document_format_thread = threading.Thread(
                         target=semaphore_do_work,
                         kwargs={
