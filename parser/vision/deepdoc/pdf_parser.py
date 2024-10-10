@@ -14,6 +14,9 @@
 import os
 import random
 
+import loguru
+import regex
+
 from parser.vision.deepdoc.layout_recognizer import LayoutRecognizer
 from parser.vision.deepdoc.ocr import OCR
 from parser.vision.deepdoc.recognizer import Recognizer
@@ -422,12 +425,13 @@ class PdfParser:
             detach_feats = [b["x1"] < b_["x0"],
                             b["x0"] > b_["x1"]]
             if (any(feats) and not any(concatting_feats)) or any(detach_feats):
-                print(
-                    b["text"],
-                    b_["text"],
-                    any(feats),
-                    any(concatting_feats),
-                    any(detach_feats))
+                #TODO:现在注释掉
+                # print(
+                #     b["text"],
+                #     b_["text"],
+                #     any(feats),
+                #     any(concatting_feats),
+                #     any(detach_feats))
                 i += 1
                 continue
             # merge up and down
@@ -576,7 +580,11 @@ class PdfParser:
             if i >= len(self.boxes) or not prefix:
                 break
             for j in range(i, min(i + 128, len(self.boxes))):
-                if not re.match(prefix, self.boxes[j]["text"]):
+                # escaped_text = re.escape(self.boxes[j]["text"])
+                # loguru.logger.info(f"escaped_text:{escaped_text}")
+                ##TODO:更改一下正则的策略
+                prefix_text = re.sub(r'[\(（\)）]', '', prefix)
+                if not regex.match(prefix_text,self.boxes[j]["text"]):
                     continue
                 for k in range(i, j):
                     self.boxes.pop(i)

@@ -158,7 +158,7 @@ class TextSFTDatasets():
 
         return [{"question": q, "answer": re.sub(r"\n\s*", "\n", a.strip())} for q, a in matches if q and a]
 
-    def build_sft_format(self,all_qa_documents,handbook_name):
+    def build_sft_format(self,all_qa_documents,handbook_name,save_sft_datasets):
         handbook_name = "《"+handbook_name+"》"
         instruction = '''使用{name}知识内容回答建筑专业性问题'''.format(name=handbook_name)
         sft_data_list = []
@@ -171,7 +171,7 @@ class TextSFTDatasets():
             )
             sft_data_list.append(data.to_dict())
         if sft_data_list:
-            write_json_file_line(sft_data_list,"data/handbook_sft/handbook_dataset_sft_"+handbook_name+".json")
+            write_json_file_line(sft_data_list,save_sft_datasets)
 
 
 # def execute_text_sft_dataset():
@@ -194,12 +194,17 @@ def execute_text_sft_dataset():
     index = 0
     etl_type = "Vision"
     for text_file_path in all_tex_path:
+        # text_file_path ='/home/dataset-s3-0/gaojing/datasets/pdf/质量国标/GB50566-2010 冶金除尘设备工程安装与质量验收规范.pdf' 
         text_sft_dataset = TextSFTDatasets(text_file_path)
-        # tex_file_name = Path(text_file_path).stem
-        all_docs = text_sft_dataset.extract_text(etl_type)
-        loguru.logger.info(f"chunk text {len(all_docs)}")
-        all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
-        text_sft_dataset.build_sft_format(all_qa_documents,Path(text_file_path).stem)
+        tex_file_name = Path(text_file_path).stem
+        save_sft_datasets = "data/handbook_sft/handbook_dataset_sft_"+tex_file_name+".json"
+        if not os.path.exists(save_sft_datasets):
+            all_docs = text_sft_dataset.extract_text(etl_type)
+            loguru.logger.info(f"{tex_file_name},chunk text {len(all_docs)}")
+            all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
+            text_sft_dataset.build_sft_format(all_qa_documents,tex_file_name,save_sft_datasets)
+        else:
+            loguru.logger.info(f"{save_sft_datasets} file is exist")
 def execute_text_sft_datatsets_merge():
     json_dir = "data/handbook_sft/"
     json_files = get_directory_all_json_files(json_dir)

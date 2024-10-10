@@ -1,0 +1,1 @@
+python main_execute_text_qa_generator.py
