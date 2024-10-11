@@ -1,10 +1,13 @@
+import json
+import os
 from typing import Any, Optional
 
 import chromadb
-from chromadb import QueryResult, Settings
+from chromadb import Embeddings, QueryResult, Settings
 from pydantic import BaseModel
 
 from embedding.datasource.vector_base import BaseVector
+from embedding.datasource.vector_factory import AbstractVectorFactory
 from embedding.datasource.vector_type import VectorType
 from entities.document import Document
 
@@ -110,28 +113,25 @@ class ChromaVector(BaseVector):
         return []
 
 
-# class ChromaVectorFactory(AbstractVectorFactory):
-#     def init_vector(self, dataset: Dataset, attributes: list, embeddings: Embeddings) -> BaseVector:
-#         if dataset.index_struct_dict:
-#             class_prefix: str = dataset.index_struct_dict['vector_store']['class_prefix']
-#             collection_name = class_prefix.lower()
-#         else:
-#             dataset_id = dataset.id
-#             collection_name = Dataset.gen_collection_name_by_id(dataset_id).lower()
-#             index_struct_dict = {
-#                 "type": VectorType.CHROMA,
-#                 "vector_store": {"class_prefix": collection_name}
-#             }
-#             dataset.index_struct = json.dumps(index_struct_dict)
-#
-#         return ChromaVector(
-#             collection_name=collection_name,
-#             config=ChromaConfig(
-#                 host=app_config.CHROMA_HOST,
-#                 port=app_config.CHROMA_PORT,
-#                 tenant=app_config.CHROMA_TENANT or chromadb.DEFAULT_TENANT,
-#                 database=app_config.CHROMA_DATABASE or chromadb.DEFAULT_DATABASE,
-#                 auth_provider=app_config.CHROMA_AUTH_PROVIDER,
-#                 auth_credentials=app_config.CHROMA_AUTH_CREDENTIALS,
-#             ),
-#         )
+class ChromaVectorFactory(AbstractVectorFactory):
+    def init_vector(self, collection_name, attributes: list, embeddings: Embeddings) -> BaseVector:
+        # if dataset.index_struct_dict:
+        #     class_prefix: str = dataset.index_struct_dict["vector_store"]["class_prefix"]
+        #     collection_name = class_prefix.lower()
+        # else:
+        #     dataset_id = dataset.id
+        #     collection_name = Dataset.gen_collection_name_by_id(dataset_id).lower()
+        #     index_struct_dict = {"type": VectorType.CHROMA, "vector_store": {"class_prefix": collection_name}}
+        #     dataset.index_struct = json.dumps(index_struct_dict)
+
+        return ChromaVector(
+            collection_name=collection_name,
+            config=ChromaConfig(
+                host=os.getenv("CHROMA_HOST"),
+                port=os.getenv("CHROMA_PORT"),
+                tenant= chromadb.DEFAULT_TENANT,
+                database=chromadb.DEFAULT_DATABASE,
+                auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+                auth_credentials="starchat123456",
+            ),
+        )
