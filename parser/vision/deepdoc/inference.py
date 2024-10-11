@@ -4,6 +4,7 @@ import re
 import loguru
 import numpy as np
 from parser.vision.deepdoc.deepdoc_pdf_extractor import chunk
+from parser.vision.deepdoc.deepdoc_pdf_table_extractor import table_extractor
 from parser.vision.deepdoc.layout_recognizer import LayoutRecognizer
 from parser.vision.deepdoc.ocr import OCR
 from parser.vision.deepdoc.recognizer import Recognizer
@@ -58,7 +59,10 @@ def test_deepdoc_layout_recognizer_inference():
             print("save result to: " + save_name)
             
 def get_table_html(img, tb_cpns, ocr):
-    boxes = ocr(np.array(img))
+    from PIL import Image
+    images = "datasets/tables_images_save/《混凝土结构工程施工质量验收规范 GB50204-2015》_21_.png"
+    images = Image.open(images)
+    boxes = ocr(np.array(images))
     boxes = Recognizer.sort_Y_firstly(
         [{"x0": b[0][0], "x1": b[1][0],
           "top": b[0][1], "text": t[0],
@@ -168,19 +172,22 @@ def get_table_html(img, tb_cpns, ocr):
     content = TableStructureRecognizer.construct_table(boxes, html=True)
     return content
        
-def test_deepdoc_layout_recognizer_inference():
-    labels = TableStructureRecognizer.labels
-    detr = TableStructureRecognizer()
-    ocr = OCR()
-    threshold=0.5
-    pdf_file = "data/pdf/GB_50203-2011砌体结构工程施工质量验收规范.pdf"
-    pdf_image = pdf_file_image(pdf_file)  
-    layouts = detr(pdf_image, threshold)
-    for i, lyt in enumerate(layouts):
-        html = get_table_html(pdf_image[i], lyt, ocr)
-        loguru.logger.info(f"html:{html}")   
-
-            
+def test_deepdoc_layout_recognizer_inference_trs():
+    # labels = TableStructureRecognizer.labels
+    # detr = TableStructureRecognizer()
+    # ocr = OCR()
+    # threshold=0.8
+    pdf_file = "data/test_ocr.pdf"
+    # pdf_image = pdf_file_image(pdf_file)  
+    # layouts = detr(pdf_image, threshold)
+    # for i, lyt in enumerate(layouts):
+    #     html = get_table_html(pdf_image[i], lyt, ocr)
+    #     loguru.logger.info(f"html:{html}")
+    def dummy(prog=None, msg=""):
+            pass   
+    tbls= table_extractor(pdf_file,callback=dummy)
+    for (img, rows), poss in tbls:
+        loguru.logger.info(f"tbl info:{rows}")
       
 def deepdoc_ocr_pdf_text_extract():
     def dummy(prog=None, msg=""):

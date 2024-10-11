@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import re
 import threading
+import time
 import uuid
 
 import loguru
@@ -194,12 +195,16 @@ def execute_text_sft_dataset():
     index = 0
     etl_type = "Vision"
     for text_file_path in all_tex_path:
-        # text_file_path ='/home/dataset-s3-0/gaojing/datasets/pdf/质量国标/GB50566-2010 冶金除尘设备工程安装与质量验收规范.pdf' 
         text_sft_dataset = TextSFTDatasets(text_file_path)
         tex_file_name = Path(text_file_path).stem
         save_sft_datasets = "data/handbook_sft/handbook_dataset_sft_"+tex_file_name+".json"
         if not os.path.exists(save_sft_datasets):
+            loguru.logger.info(f"tex_file_name:{tex_file_name}")
+            start_time = time.time()  # 开始时间
             all_docs = text_sft_dataset.extract_text(etl_type)
+            end_time = time.time()  # 结束时间
+            execution_time = end_time - start_time  # 计算执行时间
+            loguru.logger.info(f"execution_time:{execution_time}")
             loguru.logger.info(f"{tex_file_name},chunk text {len(all_docs)}")
             all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
             text_sft_dataset.build_sft_format(all_qa_documents,tex_file_name,save_sft_datasets)

@@ -40,6 +40,7 @@ class Pdf(PdfParser):
 
         from timeit import default_timer as timer
         start = timer()
+
         self._layouts_rec(zoomin)
         callback(0.67, "Layout analysis finished")
         print("layouts:", timer() - start)
@@ -77,7 +78,7 @@ def save_table_images(res_list,to_markdow=None):
         markdow_content_dict["image"] = file_name +"_"+str(page_num)+"_"+".png"
         markdow_content_dict['markdown'] = table_images['content_with_weight']
         markdow_content_list.append(markdow_content_dict)
-        table_images["image"].save(save_image_name)
+        table_images["image"].save(save_image_name,quality=95)
     if to_markdow and markdow_content_list:
         save_markdown_file_name = tabel_images_save_path +file_name+".json"
         write_json_file_line(markdow_content_list,save_markdown_file_name)

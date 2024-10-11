@@ -580,11 +580,16 @@ class PdfParser:
             if i >= len(self.boxes) or not prefix:
                 break
             for j in range(i, min(i + 128, len(self.boxes))):
-                # escaped_text = re.escape(self.boxes[j]["text"])
-                # loguru.logger.info(f"escaped_text:{escaped_text}")
-                ##TODO:更改一下正则的策略
-                prefix_text = re.sub(r'[\(（\)）]', '', prefix)
-                if not regex.match(prefix_text,self.boxes[j]["text"]):
+                ##转义一下
+                # escaped_prefix = re.escape(prefix)
+                # # loguru.logger.info(f"escaped_text:{escaped_text}")
+                # ##TODO:更改一下正则的策略
+                # prefix_text = re.sub(r'[\(（\)）]', '', escaped_prefix)
+                try:
+                    if not re.match(prefix,self.boxes[j]["text"]):
+                        continue
+                except re.error as e:
+                    loguru.logger.info(f"re error {e}")
                     continue
                 for k in range(i, j):
                     self.boxes.pop(i)
