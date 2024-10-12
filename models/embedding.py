@@ -19,7 +19,7 @@ class EmbeddingApi():
         response = requests.post(url, headers=headers, data=json.dumps(data))
         # 打印响应内容
         loguru.logger.info(f"Status Code:{response.status_code}")
-        return json.loads(response.text)
+        return json.loads(response.text)[0]
     @classmethod
     def embed_documents(cls,doc_list):
         embedding_list = [cls()._embedding(doc) for doc in doc_list]

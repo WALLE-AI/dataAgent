@@ -82,8 +82,9 @@ class Vector:
         #     redis_client.delete(collection_exist_cache_key)
 
     def _get_embeddings(self) -> Embeddings:
-        ##TODO:这里科研缓存embedding的数据便于重复查询
-        return []
+        ##TODO:缓存embedding的数据便于重复查询
+        from models.embedding import EmbeddingApi
+        return EmbeddingApi
 
     def _filter_duplicate_texts(self, texts: list[Document]) -> list[Document]:
         for text in texts.copy():
