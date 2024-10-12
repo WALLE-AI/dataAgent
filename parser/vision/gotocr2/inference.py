@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import os
 
-from llm import model_generate_latex_to_markdown
+from models.llm import model_generate_latex_to_markdown
 from parser.vision.utils.conversation import SeparatorStyle,conv_templates
 from parser.vision.utils.utils import disable_torch_init, get_directory_all_pdf_files
 from transformers import CLIPVisionModel, CLIPImageProcessor, StoppingCriteria

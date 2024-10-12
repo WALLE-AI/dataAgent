@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from entities.dataset_sft_entity import DatasetsTextSFTFormat
 from entities.document import Document
-from llm import LLMApi, model_generate_qa_document
+from models.llm import LLMApi, model_generate_qa_document
 from parser.cleaner.clean_processor import CleanProcessor
 from parser.extract_processor import EtlType, ExtractProcessor
 from parser.markdown_extractor import MarkdownExtractor

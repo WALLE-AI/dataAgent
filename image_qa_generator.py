@@ -7,7 +7,7 @@ import timeit
 from json_repair import repair_json
 import loguru
 
-from llm import LLMApi, model_image_table_format_execute
+from models.llm import LLMApi, model_image_table_format_execute
 from prompt.prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT, STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
 from tqdm import tqdm
 
