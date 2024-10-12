@@ -156,7 +156,7 @@ class RetrievalService:
         try:
 
             vector_processor = Vector(docs_index)
-
+            ##chroma没有全文搜索的能力，只有部分的向量数据库具备
             documents = vector_processor.search_by_full_text(cls.escape_query_for_search(query), top_k=top_k)
             if documents:
                 if reranking_model:
