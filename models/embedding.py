@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import time
@@ -43,8 +44,8 @@ class EmbeddingApi():
         return embedding_list
 
     @classmethod
-    async def asyc_embed_documents(cls,doc_list):
-        embedding_list = [await cls().asyc_embedding(doc) for doc in doc_list]
+    def asyc_embed_documents(cls,doc_list):
+        embedding_list = [asyncio.run(cls().asyc_embedding(doc)) for doc in doc_list]
         return embedding_list
     
     @classmethod
@@ -52,5 +53,5 @@ class EmbeddingApi():
         return cls()._embedding(query)
     
     @classmethod
-    async def asyc_embed_query(cls,query):
-        return await cls().asyc_embedding(query)
+    def asyc_embed_query(cls,query):
+        return asyncio.run(cls().asyc_embedding(query))

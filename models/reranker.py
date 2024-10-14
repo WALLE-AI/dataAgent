@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from typing import List
@@ -11,6 +12,7 @@ from entities.document import Document
 class RankerApi():
     def __init__(self) -> None:
         self.des = "reranker api service"
+        self.timeout = aiohttp.ClientTimeout(total=3000)
     def __str__(self) -> str:
         return self.des
     
@@ -43,7 +45,7 @@ class RankerApi():
         embedding_list = cls()._reranker(query,recall_doc)
         return embedding_list
     @classmethod
-    async def async_reranker_documents(cls,query,recall_doc_list:List[Document]):
+    def async_reranker_documents(cls,query,recall_doc_list:List[Document]):
         recall_doc = [recall_doc.page_content for recall_doc in recall_doc_list]
-        embedding_list = await cls().asyc_reranker(query,recall_doc)
+        embedding_list = asyncio.run(cls().asyc_reranker(query,recall_doc))
         return embedding_list

@@ -136,7 +136,7 @@ class RetrievalService:
 
             if documents:
                 if reranking_model:
-                    reranker_reponse = RankerApi.reranker_documents(query,documents)
+                    reranker_reponse = RankerApi.async_reranker_documents(query,documents)
                     all_documents.append(reranker_reponse)
                 else:
                     all_documents.extend(documents)
@@ -159,7 +159,7 @@ class RetrievalService:
             documents = vector_processor.search_by_full_text(cls.escape_query_for_search(query), top_k=top_k)
             if documents:
                 if reranking_model:
-                    reranker_reponse = RankerApi.reranker_documents(query,documents)
+                    reranker_reponse = RankerApi.async_reranker_documents(query,documents)
                     all_documents.append(reranker_reponse)
                 else:
                     all_documents.extend(documents)

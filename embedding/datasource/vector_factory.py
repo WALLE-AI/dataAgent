@@ -48,14 +48,14 @@ class Vector:
 
     def create(self, texts: Optional[list] = None, **kwargs):
         if texts:
-            embeddings = self._embeddings.embed_documents([document.page_content for document in texts])
+            embeddings = self._embeddings.asyc_embed_documents([document.page_content for document in texts])
             self._vector_processor.create(texts=texts, embeddings=embeddings, **kwargs)
 
     def add_texts(self, documents: list[Document], **kwargs):
         if kwargs.get("duplicate_check", False):
             documents = self._filter_duplicate_texts(documents)
 
-        embeddings = self._embeddings.embed_documents([document.page_content for document in documents])
+        embeddings = self._embeddings.asyc_embed_documents([document.page_content for document in documents])
         self._vector_processor.create(texts=documents, embeddings=embeddings, **kwargs)
 
     def text_exists(self, id: str) -> bool:
@@ -68,7 +68,7 @@ class Vector:
         self._vector_processor.delete_by_metadata_field(key, value)
 
     def search_by_vector(self, query: str, **kwargs: Any) -> list[Document]:
-        query_vector = self._embeddings.embed_query(query)
+        query_vector = self._embeddings.asyc_embed_query(query)
         return self._vector_processor.search_by_vector(query_vector, **kwargs)
 
     def search_by_full_text(self, query: str, **kwargs: Any) -> list[Document]:
