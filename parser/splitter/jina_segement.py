@@ -20,7 +20,7 @@ async def aysnc_jina_segement_api_post_request(content):
         "content": content,
         "return_tokens": True,
         "return_chunks": True,
-        "max_chunk_length": 1000
+        "max_chunk_length": 512
     }
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -31,7 +31,7 @@ async def aysnc_jina_segement_api_post_request(content):
                 return response_json
     except Exception as e:
             loguru.logger.info(f"seed request error: {e}")
-def async_jian_segements(content):
+def async_jina_segements(content):
     return asyncio.run(aysnc_jina_segement_api_post_request(content))
 
 def jina_segement_api_post_request(content):
@@ -65,8 +65,22 @@ if __name__ == "__main__":
     下面本文将从继续预训练，领域微调数据构建，减少幻觉，知识召回四个方面进行具体的介绍。
     
     '''
-    # reponse = jina_segement_api_post_request(text)
-    reponse = async_jian_segements(text)
-    print(reponse)
-    for index,text in enumerate(reponse['chunks']):
-        loguru.logger.info(f"chunk {index} response:{text}")
+    late_file_path = "D:/LLM/project/dataAgent/data/pdf_latex/《混凝土质量控制标准 GB50164-2011》.tex"
+    docs_chunks_list = []
+    with open(late_file_path,'r',encoding='utf-8') as file:
+        data = file.read()
+        # reponse = jina_segement_api_post_request(text)
+        reponse = async_jina_segements(data)
+        tokenizer = reponse["tokenizer"]
+        tokens = reponse["num_tokens"]
+        for index,text in enumerate(reponse['chunks']):
+            data_dict = {}
+            data_dict['index'] = index
+            data_dict['chunk_text'] = text
+            data_dict["total_tokens"] = tokens
+            data_dict["tokenizer"] = tokenizer
+            docs_chunks_list.append(data_dict)
+            loguru.logger.info(f"chunk {index} response:{text}")
+        with open("data/data_chunks/test_chunk.json","w",encoding="utf-8") as file:
+            for line in docs_chunks_list:
+                file.write(json.dumps(line,ensure_ascii=False)+"\n")
