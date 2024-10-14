@@ -18,6 +18,7 @@ import random
 from collections import Counter
 import os
 import re
+import loguru
 import tiktoken
 
 import re
@@ -308,15 +309,18 @@ def tokenize_chunks(chunks, doc, eng, pdf_parser=None):
     # wrap up as es documents
     for ck in chunks:
         if len(ck.strip()) == 0:continue
-        print("--", ck)
+        # print("--", ck)
         d = copy.deepcopy(doc)
         if pdf_parser:
             try:
-                d["image"], poss = pdf_parser.crop(ck, need_position=True)
+                # d["image"], poss = pdf_parser.crop(ck, need_position=True)
+                #不保留文本信息和位置信息
+                d["image"], poss = None,None
                 add_positions(d, poss)
                 ck = pdf_parser.remove_tag(ck)
             except NotImplementedError as e:
-                pass
+                loguru.logger.info(f"tokenize_chunks error:{e}")
+                continue
         tokenize(d, ck, eng)
         res.append(d)
     return res

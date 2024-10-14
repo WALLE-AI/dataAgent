@@ -1051,6 +1051,14 @@ class PdfParser:
 
     def remove_tag(self, txt):
         return re.sub(r"@@[\t0-9.-]+?##", "", txt)
+    
+    def check_box_coordinates(self,box):
+        #left box0, upper box1, right box2, lower box3
+        # 检查右边界是否小于左边界
+        if box[2] < box[0] or box[3] < box[1]:
+            return False
+        return True
+
 
     def crop(self, text, ZM=3, need_position=False):
         imgs = []
@@ -1083,6 +1091,17 @@ class PdfParser:
             bottom *= ZM
             for pn in pns[1:]:
                 bottom += self.page_images[pn - 1].size[1]
+                
+            ##裁剪bug
+            # coordinates_tuple = (left * ZM, top * ZM,
+            #                                    right *
+            #                                    ZM, min(
+            #         bottom, self.page_images[pns[0]].size[1])
+            #                                    )
+            # if self.check_box_coordinates(coordinates_tuple):
+            #     imgs.append(self.page_images[pns[0]].crop(coordinates_tuple))
+            # else:
+            #     imgs.append(None)
             imgs.append(
                 self.page_images[pns[0]].crop((left * ZM, top * ZM,
                                                right *

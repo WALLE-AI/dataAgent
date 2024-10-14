@@ -209,6 +209,7 @@ def execute_text_sft_dataset():
             all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
             text_sft_dataset.build_sft_format(all_qa_documents,tex_file_name,save_sft_datasets)
         else:
+            index +=1
             loguru.logger.info(f"{save_sft_datasets} file is exist")
 def execute_text_sft_datatsets_merge():
     json_dir = "data/handbook_sft/"
