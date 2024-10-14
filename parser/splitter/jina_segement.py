@@ -1,10 +1,38 @@
+import asyncio
 import os
+import aiohttp
 import loguru
 import requests
 import json
 from dotenv import load_dotenv
 
 load_dotenv()
+
+timeout = aiohttp.ClientTimeout(total=3000)
+
+async def aysnc_jina_segement_api_post_request(content):
+    url = os.getenv("JINA_URL")
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+os.getenv('JINA_KEY')
+    }
+    data = {
+        "content": content,
+        "return_tokens": True,
+        "return_chunks": True,
+        "max_chunk_length": 1000
+    }
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, data=json.dumps(data)) as response:
+                if response.status != 200:
+                    loguru.logger.info(f"request error code {response.status}")
+                response_json = await response.json()
+                return response_json
+    except Exception as e:
+            loguru.logger.info(f"seed request error: {e}")
+def async_jian_segements(content):
+    return asyncio.run(aysnc_jina_segement_api_post_request(content))
 
 def jina_segement_api_post_request(content):
     url = os.getenv("JINA_URL")
@@ -37,6 +65,8 @@ if __name__ == "__main__":
     下面本文将从继续预训练，领域微调数据构建，减少幻觉，知识召回四个方面进行具体的介绍。
     
     '''
-    reponse = jina_segement_api_post_request(text)
+    # reponse = jina_segement_api_post_request(text)
+    reponse = async_jian_segements(text)
+    print(reponse)
     for index,text in enumerate(reponse['chunks']):
         loguru.logger.info(f"chunk {index} response:{text}")
