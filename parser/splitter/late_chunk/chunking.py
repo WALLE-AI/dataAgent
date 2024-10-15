@@ -122,13 +122,14 @@ class Chunker:
         """
         inputs = tokenizer(input_text, return_tensors='pt', return_offsets_mapping=True)
         punctuation_mark_id = tokenizer.convert_tokens_to_ids('.')
+        punctuation_mark_id_zh = tokenizer.convert_tokens_to_ids('。')
         sep_id = tokenizer.convert_tokens_to_ids('[SEP]')
         token_offsets = inputs['offset_mapping'][0]
         token_ids = inputs['input_ids'][0]
         chunk_positions = [
             (i, int(start + 1))
             for i, (token_id, (start, end)) in enumerate(zip(token_ids, token_offsets))
-            if token_id == punctuation_mark_id
+            if token_id in [punctuation_mark_id,punctuation_mark_id_zh]
             and (
                 token_offsets[i + 1][0] - token_offsets[i][1] > 0
                 or token_ids[i + 1] == sep_id
@@ -147,7 +148,7 @@ class Chunker:
         self,
         text: str,
         n_sentences: int,
-        tokenizer: 'AutoTokenizer',
+        tokenizer: AutoTokenizer,
     ) -> List[Tuple[int, int, int]]:
         tokens = tokenizer.encode_plus(
             text, return_offsets_mapping=True, add_special_tokens=False
@@ -157,8 +158,9 @@ class Chunker:
         chunk_spans = []
         chunk_start = 0
         count_chunks = 0
+        chunks = []
         for i in range(0, len(token_offsets)):
-            if tokens.tokens(0)[i] in ('.', '!', '?') and (
+            if tokens.tokens(0)[i] in ('.', '!', '?','。',"？","！") and (
                 (len(tokens.tokens(0)) == i + 1)
                 or (tokens.token_to_chars(i).end != tokens.token_to_chars(i + 1).start)
             ):
@@ -169,7 +171,7 @@ class Chunker:
                     count_chunks = 0
         if len(tokens.tokens(0)) - chunk_start > 1:
             chunk_spans.append((chunk_start, len(tokens.tokens(0))))
-        return chunk_spans
+        return chunks,chunk_spans
 
     def chunk(
         self,
@@ -192,7 +194,7 @@ class Chunker:
                 raise ValueError("Chunk size must be >= 4.")
             return self.chunk_by_tokens(text, chunk_size, tokenizer)
         elif chunking_strategy == "sentences":
-            return self.chunk_by_sentences(text, tokenizer)
+            return self.chunk_by_sentences(text,tokenizer)
         else:
             raise ValueError("Unsupported chunking strategy")
         

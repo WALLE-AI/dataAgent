@@ -131,7 +131,7 @@ def late_main_context():
     docs_chunks_list = []
     with open(late_file_path,'r',encoding='utf-8') as file:
         data = file.read()
-        docs_chunks = lc.run(data)
+        docs_chunks = lc.run(test_tex)
         loguru.logger.info(f"docs chunks {len(docs_chunks)}")
 
 

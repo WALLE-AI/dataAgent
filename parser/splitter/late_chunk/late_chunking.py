@@ -17,8 +17,8 @@ class LateChunkingEmbedder:
     def __init__(self, 
             model: AutoModel,
             tokenizer: AutoTokenizer, 
-            chunking_strategy: str = "fixed",
-            n_sentences: int = 1
+            chunking_strategy: str = "sentences",
+            n_sentences: int = 2
         ):
 
         self.model = model
