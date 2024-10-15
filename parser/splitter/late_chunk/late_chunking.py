@@ -1,7 +1,8 @@
+from typing import List, Tuple
 import numpy as np
 from parser.splitter.late_chunk import chunked_pooling
 from parser.splitter.late_chunk.chunking import Chunker
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer,AutoModelForCausalLM
 
 def cosine_similarity(vector1, vector2):
     vector1_norm = vector1 / np.linalg.norm(vector1)
@@ -14,7 +15,7 @@ class LateChunkingEmbedder:
     def __init__(self, 
             model: AutoModel,
             tokenizer: AutoTokenizer, 
-            chunking_strategy: str = "sentences",
+            chunking_strategy: str = "fixed",
             n_sentences: int = 1
         ):
 
@@ -23,10 +24,12 @@ class LateChunkingEmbedder:
 
         self.chunker = Chunker(chunking_strategy = chunking_strategy)
         self.n_sentences = n_sentences
+        self.chunk_size = 512
 
     ##TODO:需要使用GPU来进行，要不速度太慢了，如何API服务化了
     def run(self, document: str):
-        annotations = [self.chunker.chunk(text=document, tokenizer=self.tokenizer, n_sentences=self.n_sentences)]
+        chunks,annotations = self.chunker.chunk(text=document, tokenizer=self.tokenizer,chunk_size=self.chunk_size,n_sentences=self.n_sentences)
+        annotations = [annotations]
         model_inputs = self.tokenizer(
             document,
             return_tensors='pt',
@@ -51,3 +54,9 @@ class LateChunkingEmbedder:
             similarities.append(cosine_similarity(query_embedding, emb))
         
         return similarities
+    
+
+    
+
+
+    
