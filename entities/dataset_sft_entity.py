@@ -11,3 +11,10 @@ class DatasetsTextSFTFormat(BaseModel):
 
     def to_dict(self) -> dict:
         return jsonable_encoder(self)
+    
+class DatasetsSwiftTextSFTFormat(BaseModel):
+    system:str=""
+    query:str=""
+    response:str=""
+    def to_dict(self) -> dict:
+        return jsonable_encoder(self)

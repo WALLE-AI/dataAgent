@@ -5,3 +5,4 @@
 * https://github.com/weaviate/recipes/blob/main/weaviate-features/named-vectors/NamedVectors-ColPali-POC.ipynb
 * https://github.com/adithya-s-k/VARAG
 * https://adithya-s-k.github.io/VARAG/
+* https://github.com/PromtEngineer/localGPT-Vision.git

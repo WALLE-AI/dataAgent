@@ -10,7 +10,7 @@ import uuid
 import loguru
 from tqdm import tqdm
 
-from entities.dataset_sft_entity import DatasetsTextSFTFormat
+from entities.dataset_sft_entity import DatasetsSwiftTextSFTFormat, DatasetsTextSFTFormat
 from entities.document import Document
 from models.llm import LLMApi, model_generate_qa_document
 from parser.cleaner.clean_processor import CleanProcessor
@@ -219,8 +219,13 @@ def execute_text_sft_datatsets_merge():
         with open(file,"r",encoding="utf-8") as file:
             for line in file:
                 data  = json.loads(line)
-                all_data_list.append(data)
-    write_json_file_line(all_data_list,"data/handbook_sft/handbook_dataset_sft_all.json")
-    loguru.logger.info(f"all data list {all_data_list}")  
+                swift_dataset=DatasetsSwiftTextSFTFormat(
+                    system=data['instruction'],
+                    query=data['input'],
+                    response=data["output"]
+                )
+                all_data_list.append(swift_dataset.to_dict())
+    write_json_file_line(all_data_list,"data/handbook_sft/handbook_dataset_sft_all_swift.json")
+    loguru.logger.info(f"all data list size {len(all_data_list)}")  
 
 
