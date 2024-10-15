@@ -1,5 +1,7 @@
 from typing import List, Tuple
+import loguru
 import numpy as np
+import torch
 from parser.splitter.late_chunk import chunked_pooling
 from parser.splitter.late_chunk.chunking import Chunker
 from transformers import AutoModel, AutoTokenizer,AutoModelForCausalLM
@@ -37,12 +39,19 @@ class LateChunkingEmbedder:
             truncation=True,
             max_length=8192,
         )
+        if torch.cuda.is_available():
+            loguru.logger.info(f"model loads to gpu")
+            model_inputs = model_inputs.to("cuda")
         ##可以采用sentence_transformers来做
         model_outputs = self.model(**model_inputs)
         self.output_embs = chunked_pooling(
             model_outputs, annotations, max_length=8192, 
         )[0]
-        return self.output_embs
+        chunks_embs_list = []
+        if len(self.output_embs) == len(chunks):
+            for chunk,emb in zip(chunks,self.output_embs):
+                chunks_embs_list.append((chunk,emb.tolist()))
+        return chunks_embs_list
 
     ##这里查询没有关系，可以使用向量数据库来解决，只是解决chunk embedding的问题
     def query(self, query: str):

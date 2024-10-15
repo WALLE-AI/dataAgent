@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional, Union
 
+import loguru
 import torch
 import torch.nn as nn
 from sentence_transformers import SentenceTransformer
@@ -148,8 +149,14 @@ def load_model(model_name, model_weights=None, **model_kwargs):
         else:
             has_instructions = False
     else:
-        model = AutoModel.from_pretrained(model_name, trust_remote_code=False)
-        has_instructions = False
+        if torch.cuda.is_available():
+            loguru.logger.info(f"model loads to gpu")
+            model = AutoModel.from_pretrained(model_name, trust_remote_code=True).cuda()
+            has_instructions = False
+        else:
+            loguru.logger.info(f"model loads to cpu")
+            model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
+            has_instructions = False
 
     if model_weights and os.path.exists(model_weights):
         model._model.load_state_dict(torch.load(model_weights, device=model.device))
