@@ -117,7 +117,7 @@ def late_main_context():
     '''
 
     llm_model_name = "microsoft/Phi-3.5-mini-instruct"
-    embedding_model_name = "D:/InnovationProject/models/jina-embeddings-v3"
+    embedding_model_name = "/home/dataset-s3-0/gaojing/models/embedding/jina-embeddings-v3"
 
     embedding_model, has_instructions = load_model(embedding_model_name)
     embedding_tokenizer = AutoTokenizer.from_pretrained(embedding_model_name, trust_remote_code=True)
