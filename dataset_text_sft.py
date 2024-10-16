@@ -232,7 +232,7 @@ def execute_text_sft_datatsets_merge():
     
 def execute_text_sft_dataset_preproces():
     #聚类去重
-    dataset_file = "/home/dataset-s3-0/gaojing/llm/uCreator/data/qwen72_handbook_datasets_stf_all_27W/handbook_dataset_sft_all.json"
+    dataset_file = "data/handbook_sft/handbook_dataset_sft.json"
     dataset_df = EmbeddingCluster.kmeans_embedding_cluster(dataset_file)
     loguru.logger.info(f"dataset df {len(dataset_df)}")
 

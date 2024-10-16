@@ -1,0 +1,1 @@
+THEME_ANLYSIS_PROMPT = '''What do the following customer reviews have in common?\n\nCustomer reviews:\n"""\n{reviews}\n"""\n\nTheme:'''
