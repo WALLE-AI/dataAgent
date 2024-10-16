@@ -42,7 +42,7 @@ class EmbeddingCluster():
         return docs_q_emb
         
     @classmethod
-    def kmeans_embedding_cluster(cls,dataset_file):
+    def kmeans_embedding_cluster(cls,dataset_file,save_file=None):
         data_df = cls().read_file_to_q_embedding(dataset_file=dataset_file)
         data_df['q_embedding']=data_df['q_embedding'].apply(np.array)     
         matrix = np.vstack(data_df['q_embedding'].values)
@@ -50,6 +50,8 @@ class EmbeddingCluster():
         kmeans.fit(matrix)
         labels = kmeans.labels_
         data_df["Cluster"] = labels
+        if save_file is not None:
+            data_df.to_csv(save_file, index=False)
         return data_df
     
     @classmethod
