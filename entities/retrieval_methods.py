@@ -13,3 +13,8 @@ class RetrievalMethod(Enum):
     @staticmethod
     def is_support_fulltext_search(retrieval_method: str) -> bool:
         return retrieval_method in {RetrievalMethod.FULL_TEXT_SEARCH.value, RetrievalMethod.HYBRID_SEARCH.value}
+    
+class EmbeddingInferenceType(Enum):
+    SENTENCE_TRANSFORMER = "sentence_transformer"
+    FLAG_EMBEDDING = "flagembedding"
+    FAST_EMBED = "fastembed"
