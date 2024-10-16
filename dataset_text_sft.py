@@ -10,6 +10,7 @@ import uuid
 import loguru
 from tqdm import tqdm
 
+from embedding.preprocess.embedding_clustering import EmbeddingCluster
 from entities.dataset_sft_entity import DatasetsSwiftTextSFTFormat, DatasetsTextSFTFormat
 from entities.document import Document
 from models.llm import LLMApi, model_generate_qa_document
@@ -226,6 +227,13 @@ def execute_text_sft_datatsets_merge():
                 )
                 all_data_list.append(swift_dataset.to_dict())
     write_json_file_line(all_data_list,"data/handbook_sft/handbook_dataset_sft_all_swift.json")
-    loguru.logger.info(f"all data list size {len(all_data_list)}")  
+    loguru.logger.info(f"all data list size {len(all_data_list)}") 
+    
+    
+def execute_text_sft_dataset_preproces():
+    #聚类去重
+    dataset_file = "/home/dataset-s3-0/gaojing/llm/uCreator/data/qwen72_handbook_datasets_stf_all_27W/handbook_dataset_sft_all.json"
+    dataset_df = EmbeddingCluster.kmeans_embedding_cluster(dataset_file)
+    loguru.logger.info(f"dataset df {len(dataset_df)}")
 
 
