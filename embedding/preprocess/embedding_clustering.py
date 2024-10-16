@@ -9,7 +9,7 @@ from typing import List
 from sklearn.cluster import KMeans
 import pandas as pd
 import numpy as np
-from models.embedding import EmbeddingApi
+from models.embedding import EmbeddingModel
 from models.llm import LLMApi
 from prompt.theme_prompt import THEME_ANLYSIS_PROMPT
 from utils.helper import single_measure_execution_time
@@ -19,6 +19,7 @@ class EmbeddingCluster():
     def __init__(self) -> None:
         self.dsc = "emdbedding clustering "
         self.n_clusters = 100
+        self.embed_model = EmbeddingModel.get_embedding("flagembedding")
         
     def __str__(self) -> str:
         return self.dsc
@@ -28,18 +29,20 @@ class EmbeddingCluster():
         with open(dataset_file,"r",encoding="utf-8") as file:
             for line in file:
                 data  = json.loads(line)
-                data['q_embedding'] = self._docs_single_embedding(data["input"])
+                embed,tokens = self._docs_single_embedding(data["input"])
+                data['q_embedding'] = embed
+                data['tokens'] = tokens
                 docs_data.append(data)
         return pd.DataFrame(docs_data)
 
     @single_measure_execution_time
     def _docs_embedding(self,dataset:List[str]) -> List:
-        docs_q_emb = EmbeddingApi.asyc_embed_documents(doc_list=dataset)
-        return docs_q_emb
-    
+        docs_q_emb,tokens = self.embed_model.embed_documents(dataset)
+        return docs_q_emb,tokens
+    @single_measure_execution_time
     def _docs_single_embedding(self,doc:str) -> List:
-        docs_q_emb = EmbeddingApi.asyc_embed_query(doc)
-        return docs_q_emb
+        docs_q_emb,tokens = self.embed_model.embed_query(doc)
+        return docs_q_emb,tokens
         
     @classmethod
     def kmeans_embedding_cluster(cls,dataset_file,save_file=None):

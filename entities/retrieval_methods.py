@@ -18,3 +18,4 @@ class EmbeddingInferenceType(Enum):
     SENTENCE_TRANSFORMER = "sentence_transformer"
     FLAG_EMBEDDING = "flagembedding"
     FAST_EMBED = "fastembed"
+    TGI_EMBEDDING_API = "tig_embedding_api"

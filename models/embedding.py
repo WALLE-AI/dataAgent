@@ -14,7 +14,7 @@ from entities.retrieval_methods import EmbeddingInferenceType
 from utils.encoder import num_tokens_from_string
 
 
-class EmbeddingApi():
+class TigEmbeddingApi(Embeddings):
     def __init__(self) -> None:
         self.des = "embedding api service"
         self.timeout = aiohttp.ClientTimeout(total=3000)
@@ -51,7 +51,7 @@ class EmbeddingApi():
         return embedding_list
 
     @classmethod
-    def asyc_embed_documents(cls,doc_list):
+    def aembed_documents(cls,doc_list):
         embedding_list = [asyncio.run(cls().asyc_embedding(doc)) for doc in doc_list]
         return embedding_list
     
@@ -60,7 +60,7 @@ class EmbeddingApi():
         return cls()._embedding(query)
     
     @classmethod
-    def asyc_embed_query(cls,query):
+    def aembed_query(cls,query):
         return asyncio.run(cls().asyc_embedding(query))
     
 
@@ -76,6 +76,8 @@ class EmbeddingModel():
             pass
         elif inference_type == EmbeddingInferenceType.FAST_EMBED.value:
             return FastEmbedInference
+        elif inference_type == EmbeddingInferenceType.TGI_EMBEDDING_API.value:
+            return TigEmbeddingApi
         else:
             loguru.logger.info(f"no support embedding inference type")
 
