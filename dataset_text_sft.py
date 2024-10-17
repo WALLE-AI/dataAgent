@@ -176,19 +176,19 @@ class TextSFTDatasets():
             write_json_file_line(sft_data_list,save_sft_datasets)
 
 
-# def execute_text_sft_dataset():
-#     file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
-#     file_path_md = "data/test_readme.md"
-#     file_path_md = "data/handbook_test.md"
-#     file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
-#     ##有问题
-#     file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
-#     file_name = Path(file_path_tex)
-#     text_sft_dataset = TextSFTDatasets(file_path_tex)
-#     all_docs = text_sft_dataset.extract_text()
-#     loguru.logger.info(f"chunk text {len(all_docs)}")
-#     all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
-#     text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
+def test_execute_text_sft_dataset():
+    file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
+    file_path_md = "data/test_readme.md"
+    file_path_md = "datasets/pdf_markdown/GB50205-2001 钢结构工程施工质量验收规范.md"
+    file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
+    ##有问题
+    file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
+    file_name = Path(file_path_md)
+    text_sft_dataset = TextSFTDatasets(file_path_md)
+    all_docs = text_sft_dataset.extract_text()
+    loguru.logger.info(f"chunk text {len(all_docs)}")
+    all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
+    text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
 
 def execute_text_sft_dataset():
     tex_files = os.getenv("PDF_DIR_ROOT")

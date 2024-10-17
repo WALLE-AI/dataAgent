@@ -32,7 +32,7 @@ class ExtractProcessor:
     ) -> list[Document]:
         file_extension = _is_file_format(file_path)
         if EtlType.ETL_TYPE.value == etl_type:
-            #TODO：测试API的效果
+            #TODO：测试API的效果    
             if file_extension in {".md", ".markdown"}:
                 extractor = UnstructuredMarkdownExtractor(file_path, "unstructured_api_url")
             elif file_extension in {".docx",".doc"}:

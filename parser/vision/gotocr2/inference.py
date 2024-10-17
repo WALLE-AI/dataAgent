@@ -186,6 +186,12 @@ def execute_gotocr2_model(model,tokenizer,pdf_file):
     return content_list,content
 
 
+def extract_markdown_file_heading():
+    markdonw_file = ""
+    
+
+
+
          
 def test_execute_gotocr2_model(pdf_file):
     model_name = os.getenv("MODEL_PATH_GOT")
