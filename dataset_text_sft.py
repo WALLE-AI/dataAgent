@@ -13,7 +13,7 @@ from tqdm import tqdm
 from embedding.preprocess.embedding_clustering import EmbeddingCluster
 from entities.dataset_sft_entity import DatasetsSwiftTextSFTFormat, DatasetsTextSFTFormat
 from entities.document import Document
-from models.llm import LLMApi, model_generate_qa_document
+from models.llm import LLMApi, model_generate_q_document, model_generate_qa_document
 from parser.cleaner.clean_processor import CleanProcessor
 from parser.extract_processor import EtlType, ExtractProcessor
 from parser.markdown_extractor import MarkdownExtractor
@@ -39,6 +39,8 @@ class TextSFTDatasets():
         
     def extract_text(self,etl_type):
         return ExtractProcessor.extract(self.file_path,etl_type)
+    
+
     
     def chunk_text_to_qa_unstructured(self, documents: list[Document], **kwargs) -> list[Document]:
         all_qa_documents = []
@@ -176,19 +178,50 @@ class TextSFTDatasets():
             write_json_file_line(sft_data_list,save_sft_datasets)
 
 
+def extract_questions(text):
+    # 使用正则表达式匹配包含“问题”字样的行
+    pattern = r'.*问题：.*'
+    questions = re.findall(pattern, text, re.MULTILINE)
+    return questions
+
+
 def test_execute_text_sft_dataset():
     file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
     file_path_md = "data/test_readme.md"
-    file_path_md = "datasets/pdf_markdown/GB50205-2001 钢结构工程施工质量验收规范.md"
+    file_path_md = "data/pdf_markdown/GB50205-2001 钢结构工程施工质量验收规范.md"
     file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
     ##有问题
+    etltype = "localhost"
     file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
     file_name = Path(file_path_md)
     text_sft_dataset = TextSFTDatasets(file_path_md)
-    all_docs = text_sft_dataset.extract_text()
+    all_docs = text_sft_dataset.extract_text(etltype)
+    q_reponse_list = []
     loguru.logger.info(f"chunk text {len(all_docs)}")
-    all_qa_documents = text_sft_dataset.chunk_text_to_qa_unstructured(all_docs)
-    text_sft_dataset.build_sft_format(all_qa_documents,file_name.stem)
+    for doc in all_docs[20:30]:
+        loguru.logger.info(f"doc:{doc}")
+        q_reponse = []
+        if len(doc.page_content) >50:
+            reponse,tokens = model_generate_q_document(doc.page_content,"Chinese")
+            q_reponse = extract_questions(reponse)
+            if q_reponse:
+                for question in q_reponse:
+                    data_dict = {}
+                    data_dict["question"] = question
+                    data_dict["context"] = doc.page_content
+                    data_dict["tokens"] = tokens
+                    q_reponse_list.append(data_dict)
+    loguru.logger.info(f"response:{len(q_reponse_list)}")
+    save_file = "data/handbook_" +file_name.stem +"_.json"
+    with open(save_file,"w",encoding="utf-8") as file:
+        for line in q_reponse_list:
+            file.write(json.dumps(line, ensure_ascii=False) + "\n")
+            
+    
+    
+    
+    
+
 
 def execute_text_sft_dataset():
     tex_files = os.getenv("PDF_DIR_ROOT")

@@ -12,6 +12,7 @@ import requests
 from entities.image_entity import ImageVlmModelOutPut
 from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
 from prompt.prompt import GENERATOR_QA_PROMPT_ZH, LATEXT_TO_MARKDOWN_PROMPT, PROMPT_TEST
+from prompt.self_qa_prompt import SELF_GENERATOR_QA_INSTRUCTION_PROMPT
 from utils.helper import ddg_search_text
 
 MODEL_NAME_LIST = {
@@ -32,7 +33,8 @@ MODEL_NAME_LIST = {
         "openai/gpt-4o":"openai/gpt-4o",
         "openai/gpt-4o-mini-2024-07-18":"openai/gpt-4o-mini-2024-07-18",
         "qwen/qwen-2-vl-72b-instruct":"qwen/qwen-2-vl-72b-instruct",
-        "qwen/qwen-2-vl-7b-instruct":"qwen/qwen-2-vl-7b-instruct"
+        "qwen/qwen-2-vl-7b-instruct":"qwen/qwen-2-vl-7b-instruct",
+        "nvidia/llama-3.1-nemotron-70b-instruct":"nvidia/llama-3.1-nemotron-70b-instruct"
     },
     "siliconflow":{
         "Qwen/Qwen2-7B-Instruct":"Qwen/Qwen2-7B-Instruct",
@@ -192,6 +194,17 @@ def model_generate_latex_to_markdown(query):
     answer = response["content"]
     response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query)+response['total_tokens']
     return answer.strip(),response['total_tokens']
+
+def model_generate_q_document(knowledge_data:str,document_language: str):
+    ##TODO 这里prompt要更改一下
+    query_prompt = SELF_GENERATOR_QA_INSTRUCTION_PROMPT.format(unsupervised_knowledge_data=knowledge_data,language=document_language)
+    # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
+    prompt = LLMApi.build_prompt(query_prompt)
+    response = LLMApi.call_llm(prompt,llm_type="openrouter",model_name="nvidia/llama-3.1-nemotron-70b-instruct")
+    answer = response["content"]
+    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query_prompt)+response['total_tokens']
+    return answer.strip(),response['total_tokens']
+
     
 def model_generate_qa_document(query, document_language: str):
     ##TODO 这里prompt要更改一下
