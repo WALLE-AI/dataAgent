@@ -7,6 +7,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import os
 
+from entities.dataset_sft_entity import DatasetsLatextToMarkdonwPage
 from models.llm import model_generate_latex_to_markdown
 from parser.vision.utils.conversation import SeparatorStyle,conv_templates
 from parser.vision.utils.utils import disable_torch_init, get_directory_all_pdf_files
@@ -26,7 +27,7 @@ from transformers import TextStreamer
 import re
 import string
 
-from utils.helper import MeasureExecutionTime, llm_result_postprocess, pdf_file_image
+from utils.helper import MeasureExecutionTime, llm_result_postprocess, pdf_file_image, single_measure_execution_time, write_json_file_line
 
 DEFAULT_IMAGE_TOKEN = "<image>"
 DEFAULT_IMAGE_PATCH_TOKEN = '<imgpad>'
@@ -53,7 +54,7 @@ def init_model(model_path):
     model_name = os.path.expanduser(model_path)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    model = GOTQwenForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, device_map='cuda', use_safetensors=True, pad_token_id=151643).eval()
+    model = GOTQwenForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, device_map='auto', use_safetensors=True, pad_token_id=151643).eval()
     return model,tokenizer
 
 @MeasureExecutionTime
@@ -186,47 +187,44 @@ def execute_gotocr2_model(model,tokenizer,pdf_file):
     return content_list,content
 
 
-def extract_markdown_file_heading():
-    markdonw_file = ""
-    
+def latex_to_markdown_llm(latex:str,data_dict:DatasetsLatextToMarkdonwPage):
+    llm_type="siliconflow",
+    model_name="Qwen/Qwen2.5-72B-Instruct"
+    markdown_content,total_tokens = model_generate_latex_to_markdown(latex,llm_type=llm_type,model_name=model_name)
+    data_dict.page_total_tokens = total_tokens
+    markdown_content = llm_result_postprocess(markdown_content)
+    if isinstance(markdown_content,dict) and "markdown" in markdown_content:
+        markdown_text = markdown_content['markdown']
+        data_dict.markdown_content = markdown_text
 
-
-
-         
-def test_execute_gotocr2_model(pdf_file):
-    model_name = os.getenv("MODEL_PATH_GOT")
+def execute_gotocr2_model_latex_to_markdown(pdf_file,model,tokenizer,markdown=None):
     # pdf_file = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.pdf"
     # image = load_image(image_file)
-    pdf_file_path = Path(pdf_file)
-    pdf_image = pdf_file_image(pdf_file)
-    model,tokenizer = init_model(model_name)
-    content_list = []
-    markdown_content_list=[]
+    pdf_file = Path(pdf_file)
     type_ocr = "format"
-    index = 0
-    for image in tqdm(pdf_image):
-        content = inference_model(model,tokenizer,image,type_ocr)
-        markdown_content,total_tokens = model_generate_latex_to_markdown(content)
-        all_total_tokens += total_tokens
-        markdown_content = llm_result_postprocess(markdown_content)
-        if isinstance(markdown_content,dict) and "markdown" in markdown_content:
-            markdown_text = markdown_content['markdown']
-            markdown_content_list.append(markdown_text)
-        content_list.append(content)
-        index +=1
-        if index == 10:
-            break
-    content = "\n".join(content_list)
-    markdown_content = "\n".join(markdown_content_list)
-    write_tex_file(markdown_content,"data/pdf_markdown",".md",pdf_file_path.stem)
-    write_tex_file(content,"data/pdf_latex",".tex",pdf_file_path.stem)
-    loguru.logger.info("{pdf_file_path.stem} all_total_tokens:{all_total_tokens}")
+    save_latex_markdown = "data/pdf_markdown_latex/pdf_markdown_latex_gotocr2_" +pdf_file.stem+".json"
+    latex_markdown_page_data_list = []
+    if not os.path.exists(save_latex_markdown):
+        pdf_image = pdf_file_image(pdf_file)
+        for index,image in tqdm(pdf_image):
+            data_dict = DatasetsLatextToMarkdonwPage()
+            data_dict.file_name = pdf_file.name
+            latex_content = inference_model(model,tokenizer,image,type_ocr)
+            data_dict.latex_content = latex_content
+            data_dict.page_num = index
+            if markdown:
+                latex_to_markdown_llm(latex_content,data_dict)
+            latex_markdown_page_data_list.append(data_dict.to_dict())
+            write_json_file_line(latex_markdown_page_data_list,save_latex_markdown)
+    else:
+        loguru.logger.info(f"pdf file exist to latex {save_latex_markdown}")
     
 
 def execute_all_pdf_latex_preprocess():
     pdf_dir_path =os.getenv("PDF_DIR_ROOT")
+    model_name = os.getenv("MODEL_PATH_GOT")
     all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
-    for pdf_file in all_pdf_files:
+    model,tokenizer = init_model(model_name)
+    for pdf_file in tqdm(all_pdf_files):
         loguru.logger.info(f"pdf file: {pdf_file}")
-        test_execute_gotocr2_model(pdf_file)
-    
+        execute_gotocr2_model_latex_to_markdown(pdf_file,model,tokenizer)

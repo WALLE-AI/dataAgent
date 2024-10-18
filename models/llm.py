@@ -192,11 +192,11 @@ class LLMApi():
     def get_client(cls,llm_type):
         return cls().llm_client(llm_type)
     
-def model_generate_latex_to_markdown(query):
+def model_generate_latex_to_markdown(query,llm_type="siliconflow",model_name="Qwen/Qwen2.5-72B-Instruct"):
     ##TODO 这里prompt要更改一下
     prompt = LATEXT_TO_MARKDOWN_PROMPT.replace("{latex_content}",query)
     prompt = LLMApi.build_prompt(prompt)
-    response = LLMApi.call_llm(prompt)
+    response = LLMApi.call_llm(prompt,llm_type=llm_type,model_name=model_name)
     answer = response["content"]
     response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query)+response['total_tokens']
     return answer.strip(),response['total_tokens']

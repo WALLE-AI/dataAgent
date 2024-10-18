@@ -1,6 +1,7 @@
 
 import json
 from hashlib import sha256
+import os
 import time
 
 from PIL import Image
@@ -24,7 +25,7 @@ def pdf_file_image(pdf_file,zoomin=3):
     '''
     import pdfplumber
     pdf = pdfplumber.open(pdf_file)
-    images = [p.to_image(resolution=72 * zoomin).annotated for i, p in
+    images = [(i,p.to_image(resolution=72 * zoomin).annotated) for i, p in
                             enumerate(pdf.pages)]
     return images
 
