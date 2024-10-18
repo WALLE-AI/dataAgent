@@ -13,8 +13,8 @@ the question.
 You must answer in {language}, in a style that is clear and detailed in {language}.
 No language other than {language} should be used. 
 Please generate questions in the following format:
-1. Question: ...
-2. Question: ...
+Question: xxx
+Question: xxx
 
 '''
 
@@ -23,7 +23,7 @@ The background knowledge is:
 {unsupervised_knowledge_data}
 Please answer the following question based on the
 content of the article above:
-{the_generated_question}
+{question}
 Please answer this question as thoroughly as possible,
 but do not change the key information in the original
 text, and do not include expressions such as “based

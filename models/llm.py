@@ -12,7 +12,7 @@ import requests
 from entities.image_entity import ImageVlmModelOutPut
 from parser.tokenizers.gpt2_tokenzier import GPT2Tokenizer
 from prompt.prompt import GENERATOR_QA_PROMPT_ZH, LATEXT_TO_MARKDOWN_PROMPT, PROMPT_TEST
-from prompt.self_qa_prompt import SELF_GENERATOR_QA_INSTRUCTION_PROMPT
+from prompt.self_qa_prompt import SELF_GENERATOR_ANSWER_PROMPT, SELF_GENERATOR_QA_INSTRUCTION_PROMPT
 from utils.helper import ddg_search_text
 
 MODEL_NAME_LIST = {
@@ -30,11 +30,13 @@ MODEL_NAME_LIST = {
         "microsoft/phi-3-medium-4k-instruct":"microsoft/phi-3-medium-4k-instruct",
         "meta-llama/llama-3-70b-instruct":"meta-llama/llama-3-70b-instruct",
         "mistralai/mistral-7b-instruct":"mistralai/mistral-7b-instruct",
+        "anthropic/claude-3.5-sonnet":"anthropic/claude-3.5-sonnet",
         "openai/gpt-4o":"openai/gpt-4o",
         "openai/gpt-4o-mini-2024-07-18":"openai/gpt-4o-mini-2024-07-18",
         "qwen/qwen-2-vl-72b-instruct":"qwen/qwen-2-vl-72b-instruct",
         "qwen/qwen-2-vl-7b-instruct":"qwen/qwen-2-vl-7b-instruct",
-        "nvidia/llama-3.1-nemotron-70b-instruct":"nvidia/llama-3.1-nemotron-70b-instruct"
+        "nvidia/llama-3.1-nemotron-70b-instruct":"nvidia/llama-3.1-nemotron-70b-instruct",
+        "openai/o1-mini-2024-09-12":"openai/o1-mini-2024-09-12"
     },
     "siliconflow":{
         "Qwen/Qwen2-7B-Instruct":"Qwen/Qwen2-7B-Instruct",
@@ -143,7 +145,11 @@ class LLMApi():
                 if text.choices[0].delta.content:
                     message_content += text.choices[0].delta.content
         ##如果没有就返回为默认
-        response_dict = ImageVlmModelOutPut()
+        response_dict = ImageVlmModelOutPut(
+            model_name=text.model,
+            content=message_content,
+            total_tokens=cls._get_num_tokens_by_gpt2(message_content)
+        )
         return response_dict.to_dict()
     @classmethod
     def _get_num_tokens_by_gpt2(self, text: str) -> int:
@@ -195,12 +201,22 @@ def model_generate_latex_to_markdown(query):
     response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query)+response['total_tokens']
     return answer.strip(),response['total_tokens']
 
-def model_generate_q_document(knowledge_data:str,document_language: str):
+def model_generate_q_document(knowledge_data:str,document_language: str,llm_type="openrouter",model_name="anthropic/claude-3.5-sonnet"):
     ##TODO 这里prompt要更改一下
     query_prompt = SELF_GENERATOR_QA_INSTRUCTION_PROMPT.format(unsupervised_knowledge_data=knowledge_data,language=document_language)
     # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
     prompt = LLMApi.build_prompt(query_prompt)
-    response = LLMApi.call_llm(prompt,llm_type="openrouter",model_name="nvidia/llama-3.1-nemotron-70b-instruct")
+    response = LLMApi.call_llm(prompt,llm_type=llm_type,model_name=model_name)
+    answer = response["content"]
+    response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query_prompt)+response['total_tokens']
+    return answer.strip(),response['total_tokens']
+
+def model_generate_a_document(question:str,knowledge_data:str,document_language: str,llm_type="openrouter",model_name="anthropic/claude-3.5-sonnet"):
+    ##TODO 这里prompt要更改一下
+    query_prompt = SELF_GENERATOR_ANSWER_PROMPT.format(unsupervised_knowledge_data=knowledge_data,question=question,language=document_language)
+    # prompt = GENERATOR_QA_PROMPT_ZH_2.replace("{{document}}",query)
+    prompt = LLMApi.build_prompt(query_prompt)
+    response = LLMApi.call_llm(prompt,llm_type=llm_type,model_name=model_name)
     answer = response["content"]
     response['total_tokens'] = LLMApi._get_num_tokens_by_gpt2(query_prompt)+response['total_tokens']
     return answer.strip(),response['total_tokens']

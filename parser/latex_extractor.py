@@ -26,7 +26,7 @@ class LatexExtractor(BaseExtractor):
     def extract(self) -> list[Document]:
         from langchain.text_splitter import LatexTextSplitter
         ##这样splitter是否对了，能按标题进行切嘛？
-        latex_splitter = LatexTextSplitter(chunk_size=400, chunk_overlap=0)
+        latex_splitter = LatexTextSplitter(chunk_size=1000, chunk_overlap=100)
         with open(self._file_path,'r',encoding='utf-8') as file:
             data = file.read()
             docs = latex_splitter.create_documents([data])

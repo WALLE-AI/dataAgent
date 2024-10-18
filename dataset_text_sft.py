@@ -13,7 +13,7 @@ from tqdm import tqdm
 from embedding.preprocess.embedding_clustering import EmbeddingCluster
 from entities.dataset_sft_entity import DatasetsSwiftTextSFTFormat, DatasetsTextSFTFormat
 from entities.document import Document
-from models.llm import LLMApi, model_generate_q_document, model_generate_qa_document
+from models.llm import LLMApi, model_generate_a_document, model_generate_q_document, model_generate_qa_document
 from parser.cleaner.clean_processor import CleanProcessor
 from parser.extract_processor import EtlType, ExtractProcessor
 from parser.markdown_extractor import MarkdownExtractor
@@ -179,10 +179,30 @@ class TextSFTDatasets():
 
 
 def extract_questions(text):
-    # 使用正则表达式匹配包含“问题”字样的行
-    pattern = r'.*问题：.*'
-    questions = re.findall(pattern, text, re.MULTILINE)
+    questions = []
+    lines = text.split('\n')
+    for line in lines:
+        if line.startswith('Question:'):
+            questions.append(line[len('Question: '):])
     return questions
+
+def extract_questions_re(text):
+    # 使用正则表达式匹配以"Question:"开头的句子
+    questions = re.findall(r'Question:\s*(.*?)(?=\nQuestion:|$)', text, re.DOTALL)
+    return [question.strip() for question in questions]
+
+
+def extract_qa_with_regex(text):
+    # 正则表达式匹配Question和Answer块
+    pattern = r'Question: (.*?)\n\nAnswer: (.*?)(?=\n\nQuestion: |\Z)'
+    
+    # 使用正则表达式查找所有匹配项
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    # 将匹配项转换为问题和答案对
+    qa_pairs = [{"Question":match[0].strip(), "Answer":match[1].strip()} for match in matches]
+    
+    return qa_pairs
 
 
 def test_execute_text_sft_dataset():
@@ -196,21 +216,30 @@ def test_execute_text_sft_dataset():
     file_name = Path(file_path_md)
     text_sft_dataset = TextSFTDatasets(file_path_md)
     all_docs = text_sft_dataset.extract_text(etltype)
+    llm_type="openrouter"
+    model_name="anthropic/claude-3.5-sonnet"
     q_reponse_list = []
     loguru.logger.info(f"chunk text {len(all_docs)}")
     for doc in all_docs[20:30]:
         loguru.logger.info(f"doc:{doc}")
         q_reponse = []
         if len(doc.page_content) >50:
-            reponse,tokens = model_generate_q_document(doc.page_content,"Chinese")
+            reponse,tokens = model_generate_q_document(doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
             q_reponse = extract_questions(reponse)
             if q_reponse:
                 for question in q_reponse:
-                    data_dict = {}
-                    data_dict["question"] = question
-                    data_dict["context"] = doc.page_content
-                    data_dict["tokens"] = tokens
-                    q_reponse_list.append(data_dict)
+                    data_dict = DatasetsTextSFTFormat()
+                    answer,a_tokens = model_generate_a_document(question,doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
+                    answer_dict = extract_qa_with_regex(answer)
+                    if answer_dict:
+                        for data in answer_dict:
+                            data_dict.input = data['Question']
+                            data_dict.output = data['Answer']
+                        data_dict.llm_client = llm_type
+                        data_dict.model_name = model_name
+                        data_dict.context = doc.page_content
+                        data_dict.total_tokens = tokens +a_tokens
+                        q_reponse_list.append(data_dict.to_dict())
     loguru.logger.info(f"response:{len(q_reponse_list)}")
     save_file = "data/handbook_" +file_name.stem +"_.json"
     with open(save_file,"w",encoding="utf-8") as file:
