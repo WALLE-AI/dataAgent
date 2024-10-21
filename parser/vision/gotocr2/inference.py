@@ -1,6 +1,8 @@
 import argparse
+import json
 from pathlib import Path
 import threading
+from typing import List
 import loguru
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -27,7 +29,7 @@ from transformers import TextStreamer
 import re
 import string
 
-from utils.helper import MeasureExecutionTime, llm_result_postprocess, pdf_file_image, single_measure_execution_time, write_json_file_line
+from utils.helper import MeasureExecutionTime, get_directory_all_json_files, llm_result_postprocess, pdf_file_image, single_measure_execution_time, write_json_file_line
 
 DEFAULT_IMAGE_TOKEN = "<image>"
 DEFAULT_IMAGE_PATCH_TOKEN = '<imgpad>'
@@ -169,10 +171,10 @@ def write_tex_file(content,root_path,file_name,format,page_num=None):
         file.write(content)
 
 
-def semaphore_do_work(execute_function,semaphore,thread_name,model,tokenizer,image,type_ocr):
+def semaphore_do_work(execute_function,semaphore,thread_name,data_dict,data_dict_list:List,llm_type="siliconflow", model_name="Qwen/Qwen2.5-72B-Instruct"):
     with semaphore:
         loguru.logger.info(f"{thread_name} is working")
-        execute_function(model,tokenizer,image,type_ocr)
+        execute_function(data_dict,data_dict_list,llm_type,model_name)
         loguru.logger.info(f"{thread_name} is done")
 
 
@@ -187,15 +189,52 @@ def execute_gotocr2_model(model,tokenizer,pdf_file):
     return content_list,content
 
 
-def latex_to_markdown_llm(latex:str,data_dict:DatasetsLatextToMarkdonwPage):
-    llm_type="siliconflow",
-    model_name="Qwen/Qwen2.5-72B-Instruct"
-    markdown_content,total_tokens = model_generate_latex_to_markdown(latex,llm_type=llm_type,model_name=model_name)
-    data_dict.page_total_tokens = total_tokens
+def latex_to_markdown_llm(data_dict,data_dict_list:List,llm_type="siliconflow", model_name="Qwen/Qwen2.5-72B-Instruct"):
+    markdown_content,total_tokens = model_generate_latex_to_markdown(data_dict['latex_content'],llm_type=llm_type,model_name=model_name)
+    data_dict["page_total_tokens"] = total_tokens
+    data_dict['llm_client']=llm_type
+    data_dict['model_name']=model_name
     markdown_content = llm_result_postprocess(markdown_content)
     if isinstance(markdown_content,dict) and "markdown" in markdown_content:
         markdown_text = markdown_content['markdown']
-        data_dict.markdown_content = markdown_text
+        data_dict["markdown_content"] = markdown_text
+    data_dict_list.append(data_dict)
+        
+
+def execute_latex_to_markdown_llm():
+    file_path_dir = "data/pdf_markdown_latex/"
+    llm_type="siliconflow"
+    model_name="Qwen/Qwen2.5-72B-Instruct"
+    json_files = get_directory_all_json_files(file_path_dir)
+    data_dict_list = []
+    for file_data in tqdm(json_files):
+        with open(file_data, 'r', encoding='utf-8') as file:
+           max_threads = 5
+           semaphore = threading.Semaphore(max_threads)
+           thread_name = 0
+           threads = []
+           data_dict_list = []
+           for line in tqdm(file):
+               data = json.loads(line)
+               document_format_thread = threading.Thread(
+               target=semaphore_do_work,
+                    kwargs={
+                            "execute_function": latex_to_markdown_llm,
+                            "semaphore":semaphore,
+                            "thread_name":thread_name,
+                            "data_dict": data,
+                            "llm_type":llm_type,
+                            "model_name":model_name,
+                            "data_dict_list":data_dict_list
+                        },
+                    )
+               thread_name +=1
+               threads.append(document_format_thread)
+               document_format_thread.start()
+        for thread in threads:
+            thread.join()
+        save_file_name = "data/pdf_markdown_latex_update_markdonw/pdf_markdown_latex_gotocr2_update_markdonw"+Path(file_data).stem +".json"
+        write_json_file_line(data_dict_list,save_file_name)
 
 def execute_gotocr2_model_latex_to_markdown(pdf_file,model,tokenizer,markdown=None):
     # pdf_file = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.pdf"

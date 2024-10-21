@@ -24,6 +24,10 @@ def get_directory_all_tex_files(tex_directory_path):
     tex_files = [tex_directory_path + file for file in os.listdir(tex_directory_path) if file.endswith(".tex")]
     return tex_files
 
+def get_directory_all_json_files(tex_directory_path):
+    tex_files = [tex_directory_path + file for file in os.listdir(tex_directory_path) if file.endswith(".json")]
+    return tex_files
+
 
 def build_logger(logger_name, logger_filename):
     global handler
