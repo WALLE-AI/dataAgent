@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import threading
 import time
+from typing import List
 import uuid
 
 import loguru
@@ -246,10 +247,57 @@ def test_execute_text_sft_dataset():
         for line in q_reponse_list:
             file.write(json.dumps(line, ensure_ascii=False) + "\n")
             
-    
-    
-    
-    
+def execute_generator_answer(data_dict,data_dict_list:List,llm_type,model_name):
+    answer,a_tokens = model_generate_a_document(data_dict['input'],data_dict['context'],llm_type=llm_type,model_name=model_name,document_language="Chinese")
+    answer_dict = extract_qa_with_regex(answer)
+    if answer_dict:
+        for data in answer_dict:
+            data_dict["output"] = data['Answer']
+            data_dict['a_llm_client'] = llm_type
+            data_dict['q_model_name'] =model_name
+            data_dict["total_tokens"] = data_dict["total_tokens"]+a_tokens
+            data_dict_list.append(data_dict)
+            
+def execute_generator_question(file_path,llm_type,model_name):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        q_reponse_list = []
+        for line in tqdm(file):
+            data = json.loads(line)
+            table_content = data["markdown"]
+            if re.search(r'<\s*table\s*>', table_content):
+                ##调用
+                reponse,tokens = model_generate_q_document(table_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
+                q_reponse = extract_questions(reponse)
+                if q_reponse:
+                    for question in q_reponse:
+                        data_dict = DatasetsTextSFTFormat()
+                        data_dict.input = question
+                        data_dict.q_llm_client = llm_type
+                        data_dict.q_model_name = model_name
+                        data_dict.context = table_content
+                        data_dict.total_tokens = tokens 
+                        q_reponse_list.append(data_dict.to_dict())
+    return q_reponse_list
+            
+           
+def extract_table_html_info_to_generator_question():
+    "抽取deepdoc中table信息"
+    tables_images_save = "datasets/tables_images_save/"
+    json_files = get_directory_all_json_files(tables_images_save)
+    llm_type="openrouter"
+    model_name="anthropic/claude-3.5-sonnet"
+    for file_path in tqdm(json_files):
+        file_path = Path(file_path)
+        save_file = "data/table_data_sft/handbook_table_sft_" +file_path.stem +"_.json"
+        if not os.path.exists(save_file):
+            loguru.logger.info(f"tex_file_name:{save_file}")
+            reponse_list = execute_generator_question(file_path,llm_type,model_name)
+            loguru.logger.info(f"response:{len(reponse_list)}")
+            with open(save_file,"w",encoding="utf-8") as file:
+                for line in reponse_list:
+                    file.write(json.dumps(line, ensure_ascii=False) + "\n")
+        else:
+            loguru.logger.info(f"{save_file} file is exist")
 
 
 def execute_text_sft_dataset():

@@ -23,8 +23,10 @@ class DatasetsTextSFTFormat(BaseModel):
     output:str=""
     context:str=""
     total_tokens:int=0
-    llm_client:str=""
-    model_name:str=""
+    q_llm_client:str=""
+    q_model_name:str=""
+    a_llm_client:str=""
+    a_model_name:str=""
 
     def to_dict(self) -> dict:
         return jsonable_encoder(self)
