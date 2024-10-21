@@ -199,12 +199,27 @@ def latex_to_markdown_llm(data_dict,data_dict_list:List,llm_type="siliconflow", 
         markdown_text = markdown_content['markdown']
         data_dict["markdown_content"] = markdown_text
     data_dict_list.append(data_dict)
-        
+    
+    
+def execute_markdown_file_merge():
+    file_path_dir = "data/pdf_markdown_latex_update_markdonw/"
+    json_files = get_directory_all_json_files(file_path_dir)
+    for file_data in tqdm(json_files):
+        markdown_content_list = []
+        file_name = Path(file_data).stem
+        with open(file_data, 'r', encoding='utf-8') as file:
+            for line in tqdm(file):
+                data = json.loads(line)
+                markdown_content_list.append(data['markdown_content'])
+        markdown_content = "\n".join(markdown_content_list)
+        save_markdonw_file = "data/markdown/" + file_name +".md"
+        with open(save_markdonw_file,"w",encoding="utf-8") as file:
+            file.write(markdown_content)    
 
 def execute_latex_to_markdown_llm():
     file_path_dir = "data/pdf_markdown_latex/"
-    llm_type="siliconflow"
-    model_name="Qwen/Qwen2.5-72B-Instruct"
+    llm_type="localhost"
+    model_name="Qwen2.5-72B-Instruct-AWQ"
     json_files = get_directory_all_json_files(file_path_dir)
     data_dict_list = []
     for file_data in tqdm(json_files):

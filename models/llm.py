@@ -49,7 +49,9 @@ MODEL_NAME_LIST = {
     },
     "localhost":{
         "intern_vl":"intern_vl",
-        "qwen2":"qwen2"
+        "qwen2":"qwen2",
+        "Qwen2.5-72B-Instruct-AWQ":"Qwen2.5-72B-Instruct-AWQ"
+        
     }
     
 }
