@@ -188,7 +188,7 @@ def execute_gotocr2_model(model,tokenizer,pdf_file):
     content = "\n".join(content_list)
     return content_list,content
 
-
+@single_measure_execution_time
 def latex_to_markdown_llm(data_dict,data_dict_list:List,llm_type="siliconflow", model_name="Qwen/Qwen2.5-72B-Instruct"):
     markdown_content,total_tokens = model_generate_latex_to_markdown(data_dict['latex_content'],llm_type=llm_type,model_name=model_name)
     data_dict["page_total_tokens"] = total_tokens
@@ -224,6 +224,7 @@ def execute_latex_to_markdown_llm():
     data_dict_list = []
     for file_data in tqdm(json_files):
         with open(file_data, 'r', encoding='utf-8') as file:
+           loguru.logger.info(f"file_data:{file_data}")
            max_threads = 5
            semaphore = threading.Semaphore(max_threads)
            thread_name = 0
