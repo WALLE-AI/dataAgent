@@ -258,26 +258,74 @@ def execute_generator_answer(data_dict,data_dict_list:List,llm_type,model_name):
             data_dict["total_tokens"] = data_dict["total_tokens"]+a_tokens
             data_dict_list.append(data_dict)
             
-def execute_generator_question(file_path,llm_type,model_name):
+'''
+
+           max_threads = 5
+           semaphore = threading.Semaphore(max_threads)
+           thread_name = 0
+           threads = []
+           data_dict_list = []
+           for line in tqdm(file):
+               data = json.loads(line)
+               document_format_thread = threading.Thread(
+               target=semaphore_do_work,
+                    kwargs={
+                            "execute_function": latex_to_markdown_llm,
+                            "semaphore":semaphore,
+                            "thread_name":thread_name,
+                            "data_dict": data,
+                            "llm_type":llm_type,
+                            "model_name":model_name,
+                            "data_dict_list":data_dict_list
+                        },
+                    )
+               thread_name +=1
+               threads.append(document_format_thread)
+               document_format_thread.start()
+        for thread in threads:
+            thread.join()
+
+'''
+def generator_question(content,llm_type,model_name,q_reponse_list:List):
+    reponse,tokens = model_generate_q_document(content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
+    q_reponse = extract_questions(reponse)
+    if q_reponse:
+        for question in q_reponse:
+            data_dict = DatasetsTextSFTFormat()
+            data_dict.input = question
+            data_dict.q_llm_client = llm_type
+            data_dict.q_model_name = model_name
+            data_dict.context = content
+            data_dict.total_tokens = tokens 
+            q_reponse_list.append(data_dict.to_dict())
+     
+def execute_generator_question(file_path,q_reponse_list,llm_type,model_name):
     with open(file_path, 'r', encoding='utf-8') as file:
-        q_reponse_list = []
+        max_threads = 5
+        semaphore = threading.Semaphore(max_threads)
+        thread_name = 0
+        threads = []
         for line in tqdm(file):
             data = json.loads(line)
-            table_content = data["markdown"]
-            if re.search(r'<\s*table\s*>', table_content):
-                ##调用
-                reponse,tokens = model_generate_q_document(table_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
-                q_reponse = extract_questions(reponse)
-                if q_reponse:
-                    for question in q_reponse:
-                        data_dict = DatasetsTextSFTFormat()
-                        data_dict.input = question
-                        data_dict.q_llm_client = llm_type
-                        data_dict.q_model_name = model_name
-                        data_dict.context = table_content
-                        data_dict.total_tokens = tokens 
-                        q_reponse_list.append(data_dict.to_dict())
-    return q_reponse_list
+            content = data["markdown"]
+            if re.search(r'<\s*table\s*>', content):
+               document_format_thread = threading.Thread(
+               target=semaphore_do_work,
+                    kwargs={
+                            "execute_function": generator_question,
+                            "semaphore":semaphore,
+                            "thread_name":thread_name,
+                            "content":content,
+                            "llm_type":llm_type,
+                            "model_name":model_name,
+                            "q_reponse_list":q_reponse_list
+                        },
+                    )
+               thread_name +=1
+               threads.append(document_format_thread)
+               document_format_thread.start()
+        for thread in threads:
+            thread.join()
             
            
 def extract_table_html_info_to_generator_question():
@@ -285,16 +333,17 @@ def extract_table_html_info_to_generator_question():
     tables_images_save = "datasets/tables_images_save/"
     json_files = get_directory_all_json_files(tables_images_save)
     llm_type="openrouter"
-    model_name="anthropic/claude-3.5-sonnet"
-    for file_path in tqdm(json_files):
-        file_path = Path(file_path)
+    model_name="openai/gpt-4o-mini-2024-07-18"
+    for file in tqdm(json_files):
+        file_path = Path(file)
         save_file = "data/table_data_sft/handbook_table_sft_" +file_path.stem +"_.json"
         if not os.path.exists(save_file):
+            q_reponse_list = []
             loguru.logger.info(f"tex_file_name:{save_file}")
-            reponse_list = execute_generator_question(file_path,llm_type,model_name)
-            loguru.logger.info(f"response:{len(reponse_list)}")
+            execute_generator_question(file,q_reponse_list,llm_type,model_name)
+            loguru.logger.info(f"response:{len(q_reponse_list)}")
             with open(save_file,"w",encoding="utf-8") as file:
-                for line in reponse_list:
+                for line in q_reponse_list:
                     file.write(json.dumps(line, ensure_ascii=False) + "\n")
         else:
             loguru.logger.info(f"{save_file} file is exist")
