@@ -127,6 +127,14 @@ def image_to_base64(image_path,root_path):
             # 将字节流转换为Base64编码
             img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
         return f'data:image/{mime_type};base64,{img_base64}'
+
+def pdf_image_to_base64(img):
+    buffered = BytesIO()
+    mime_type = "png"
+    img.save(buffered, format=mime_type)
+    img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    return f'data:image/{mime_type};base64,{img_base64}'
+    
     
 def encode_image_base64_from_url(image_id, image_url):
     mime_type = image_id.split(".")[-1]
