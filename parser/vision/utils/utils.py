@@ -1,4 +1,5 @@
 import datetime
+import fnmatch
 import logging
 import logging.handlers
 import os
@@ -14,6 +15,20 @@ server_error_msg = "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR RE
 moderation_msg = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE TRY AGAIN."
 
 handler = None
+
+
+def find_pdf_files(directory):
+    """
+    Recursively find all PDF files in the given directory and its subdirectories.
+
+    :param directory: The root directory to start the search from.
+    :return: A list of paths to PDF files.
+    """
+    pdf_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in fnmatch.filter(files, '*.pdf'):
+            pdf_files.append(os.path.join(root, file))
+    return pdf_files
 
 
 def get_directory_all_pdf_files(pdf_directory_path):

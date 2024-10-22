@@ -12,7 +12,7 @@ import os
 from entities.dataset_sft_entity import DatasetsLatextToMarkdonwPage
 from models.llm import model_generate_latex_to_markdown
 from parser.vision.utils.conversation import SeparatorStyle,conv_templates
-from parser.vision.utils.utils import disable_torch_init, get_directory_all_pdf_files
+from parser.vision.utils.utils import disable_torch_init, find_pdf_files, get_directory_all_pdf_files
 from transformers import CLIPVisionModel, CLIPImageProcessor, StoppingCriteria
 from parser.vision.gotocr2.model import *
 from parser.vision.utils.utils import KeywordsStoppingCriteria
@@ -257,7 +257,7 @@ def execute_gotocr2_model_latex_to_markdown(pdf_file,model,tokenizer,markdown=No
     # image = load_image(image_file)
     pdf_file = Path(pdf_file)
     type_ocr = "format"
-    save_latex_markdown = "data/pdf_markdown_latex/pdf_markdown_latex_gotocr2_" +pdf_file.stem+".json"
+    save_latex_markdown = "data/pdf_markdown_latex_all/pdf_markdown_latex_gotocr2_" +pdf_file.stem+".json"
     latex_markdown_page_data_list = []
     if not os.path.exists(save_latex_markdown):
         pdf_image = pdf_file_image(pdf_file)
@@ -278,7 +278,7 @@ def execute_gotocr2_model_latex_to_markdown(pdf_file,model,tokenizer,markdown=No
 def execute_all_pdf_latex_preprocess():
     pdf_dir_path =os.getenv("PDF_DIR_ROOT")
     model_name = os.getenv("MODEL_PATH_GOT")
-    all_pdf_files = get_directory_all_pdf_files(pdf_dir_path)
+    all_pdf_files = find_pdf_files(pdf_dir_path)
     model,tokenizer = init_model(model_name)
     for pdf_file in tqdm(all_pdf_files):
         loguru.logger.info(f"pdf file: {pdf_file}")

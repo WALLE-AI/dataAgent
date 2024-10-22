@@ -32,6 +32,12 @@ def semaphore_do_work(execute_function,semaphore,thread_name,document_node,all_q
         loguru.logger.info(f"{thread_name} is working")
         execute_function(document_node,all_qa_documents,total_tokens_num,document_language)
         loguru.logger.info(f"{thread_name} is done")
+        
+def semaphore_do_work_qa(execute_function,semaphore,thread_name,**kwargs):
+    with semaphore:
+        loguru.logger.info(f"{thread_name} is working")
+        execute_function(**kwargs)
+        loguru.logger.info(f"{thread_name} is done")
 
 
 class TextSFTDatasets():
@@ -40,9 +46,33 @@ class TextSFTDatasets():
         
     def extract_text(self,etl_type):
         return ExtractProcessor.extract(self.file_path,etl_type)
-    
 
-    
+    def table_json_data_to_document(self) -> List[Document]:
+        docs_list = []
+        def extract_info(s):
+            split_result = s.split("_")
+            return split_result[0],split_result[1]
+
+        with open(self.file_path,"r",encoding="utf-8") as file:
+            for line in file:
+                '''
+                {"image": "《地下防水工程质量验收规范 GB50208-2011》_84_.png", 
+                "markdown": "<table><caption>C.2渗漏水检测表C.2.2渗漏水检测工具</caption>\n<tr><td  >名称</td><td  >用途</td></tr>\n<tr><td  >0.5m~1m钢直尺</td><td  >量测混凝土湿渍、渗水范围</td></tr>\n<tr><td  >精度为0.1mm的钢尺</td><td  >量测混凝土裂缝宽度</td></tr>\n<tr><td  >放大镜</td><td  >观测混凝土裂缝</td></tr>\n<tr><td  >有刻度的塑料量筒</td><td  >量测滴水量</td></tr>\n<tr><td  >秒表</td><td  >量测渗漏水滴落速度</td></tr>\n<tr><td  >吸墨纸或报纸</td><td  >检验湿渍与渗水</td></tr>\n<tr><td  >粉笔</td><td  >在混凝土上用粉笔勾画湿渍、渗水范围</td></tr>\n<tr><td  >工作登高扶梯</td><td  >顶板渗漏水、混凝土裂缝检验</td></tr>\n<tr><td  >带有密封缘口的规定尺寸方框量测明显滴漏和连续渗流，根据工程需要可自行设</td><td></td></tr>\n</table>"}
+                '''
+                data = json.loads(line)
+                file_name,page_num = extract_info(data["image"])
+                metadata = {
+                    "file_name":file_name,
+                    "page_num":page_num
+                }
+                if re.search(r'<\s*table\s*>', data["markdown"]):
+                    doc = Document(
+                        page_content=data["markdown"],
+                        metadata=metadata
+                        )
+                    docs_list.append(doc)
+        return docs_list
+                
     def chunk_text_to_qa_unstructured(self, documents: list[Document], **kwargs) -> list[Document]:
         all_qa_documents = []
         total_tokens_num = []
@@ -177,176 +207,193 @@ class TextSFTDatasets():
             sft_data_list.append(data.to_dict())
         if sft_data_list:
             write_json_file_line(sft_data_list,save_sft_datasets)
-
-
-def extract_questions(text):
-    questions = []
-    lines = text.split('\n')
-    for line in lines:
-        if line.startswith('Question:'):
-            questions.append(line[len('Question: '):])
-    return questions
-
-def extract_questions_re(text):
-    # 使用正则表达式匹配以"Question:"开头的句子
-    questions = re.findall(r'Question:\s*(.*?)(?=\nQuestion:|$)', text, re.DOTALL)
-    return [question.strip() for question in questions]
-
-
-def extract_qa_with_regex(text):
-    # 正则表达式匹配Question和Answer块
-    pattern = r'Question: (.*?)\n\nAnswer: (.*?)(?=\n\nQuestion: |\Z)'
-    
-    # 使用正则表达式查找所有匹配项
-    matches = re.findall(pattern, text, re.DOTALL)
-
-    # 将匹配项转换为问题和答案对
-    qa_pairs = [{"Question":match[0].strip(), "Answer":match[1].strip()} for match in matches]
-    
-    return qa_pairs
-
-
-def test_execute_text_sft_dataset():
-    file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
-    file_path_md = "data/test_readme.md"
-    file_path_md = "data/pdf_markdown/GB50205-2001 钢结构工程施工质量验收规范.md"
-    file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
-    ##有问题
-    etltype = "localhost"
-    file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
-    file_name = Path(file_path_md)
-    text_sft_dataset = TextSFTDatasets(file_path_md)
-    all_docs = text_sft_dataset.extract_text(etltype)
-    llm_type="openrouter"
-    model_name="anthropic/claude-3.5-sonnet"
-    q_reponse_list = []
-    loguru.logger.info(f"chunk text {len(all_docs)}")
-    for doc in all_docs[20:30]:
-        loguru.logger.info(f"doc:{doc}")
-        q_reponse = []
-        if len(doc.page_content) >50:
-            reponse,tokens = model_generate_q_document(doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
-            q_reponse = extract_questions(reponse)
-            if q_reponse:
-                for question in q_reponse:
-                    data_dict = DatasetsTextSFTFormat()
-                    answer,a_tokens = model_generate_a_document(question,doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
-                    answer_dict = extract_qa_with_regex(answer)
-                    if answer_dict:
-                        for data in answer_dict:
-                            data_dict.input = data['Question']
-                            data_dict.output = data['Answer']
-                        data_dict.llm_client = llm_type
-                        data_dict.model_name = model_name
-                        data_dict.context = doc.page_content
-                        data_dict.total_tokens = tokens +a_tokens
-                        q_reponse_list.append(data_dict.to_dict())
-    loguru.logger.info(f"response:{len(q_reponse_list)}")
-    save_file = "data/handbook_" +file_name.stem +"_.json"
-    with open(save_file,"w",encoding="utf-8") as file:
-        for line in q_reponse_list:
-            file.write(json.dumps(line, ensure_ascii=False) + "\n")
             
-def execute_generator_answer(data_dict,data_dict_list:List,llm_type,model_name):
-    answer,a_tokens = model_generate_a_document(data_dict['input'],data_dict['context'],llm_type=llm_type,model_name=model_name,document_language="Chinese")
-    answer_dict = extract_qa_with_regex(answer)
-    if answer_dict:
-        for data in answer_dict:
-            data_dict["output"] = data['Answer']
-            data_dict['a_llm_client'] = llm_type
-            data_dict['q_model_name'] =model_name
-            data_dict["total_tokens"] = data_dict["total_tokens"]+a_tokens
-            data_dict_list.append(data_dict)
-            
-'''
-
-           max_threads = 5
-           semaphore = threading.Semaphore(max_threads)
-           thread_name = 0
-           threads = []
-           data_dict_list = []
-           for line in tqdm(file):
-               data = json.loads(line)
-               document_format_thread = threading.Thread(
-               target=semaphore_do_work,
-                    kwargs={
-                            "execute_function": latex_to_markdown_llm,
-                            "semaphore":semaphore,
-                            "thread_name":thread_name,
-                            "data_dict": data,
-                            "llm_type":llm_type,
-                            "model_name":model_name,
-                            "data_dict_list":data_dict_list
-                        },
-                    )
-               thread_name +=1
-               threads.append(document_format_thread)
-               document_format_thread.start()
-        for thread in threads:
-            thread.join()
-
-'''
-def generator_question(content,llm_type,model_name,q_reponse_list:List):
-    reponse,tokens = model_generate_q_document(content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
-    q_reponse = extract_questions(reponse)
-    if q_reponse:
-        for question in q_reponse:
-            data_dict = DatasetsTextSFTFormat()
-            data_dict.input = question
-            data_dict.q_llm_client = llm_type
-            data_dict.q_model_name = model_name
-            data_dict.context = content
-            data_dict.total_tokens = tokens 
-            q_reponse_list.append(data_dict.to_dict())
-     
-def execute_generator_question(file_path,q_reponse_list,llm_type,model_name):
-    with open(file_path, 'r', encoding='utf-8') as file:
+    def _execute_theading_func(sef,execute_func,documents: list[Document],llm_type,model_name,reponse_doc_list:List):
         max_threads = 5
         semaphore = threading.Semaphore(max_threads)
         thread_name = 0
         threads = []
-        for line in tqdm(file):
-            data = json.loads(line)
-            content = data["markdown"]
-            if re.search(r'<\s*table\s*>', content):
-               document_format_thread = threading.Thread(
-               target=semaphore_do_work,
+        reponse_list = []
+        for doc in tqdm(documents):
+            document_format_thread = threading.Thread(
+               target=semaphore_do_work_qa,
                     kwargs={
-                            "execute_function": generator_question,
+                            "execute_function": execute_func,
                             "semaphore":semaphore,
                             "thread_name":thread_name,
-                            "content":content,
+                            "doc":doc,
                             "llm_type":llm_type,
                             "model_name":model_name,
-                            "q_reponse_list":q_reponse_list
+                            "reponse_doc_list":reponse_doc_list
                         },
                     )
-               thread_name +=1
-               threads.append(document_format_thread)
-               document_format_thread.start()
+            thread_name +=1
+            threads.append(document_format_thread)
+            document_format_thread.start()
         for thread in threads:
             thread.join()
             
-           
-def extract_table_html_info_to_generator_question():
+            
+    def question_document(self,documents: list[Document],llm_type,model_name,reponse_doc_list):
+        '''
+        llm generator question
+        '''
+        self._execute_theading_func(self._format_question_document,documents,llm_type,model_name,reponse_doc_list)
+
+            
+    def answer_document(self,documents:list[Document],llm_type,model_name,reponse_doc_list):
+        '''
+         llm or rag generator answer
+        '''
+        self._execute_theading_func(self._format_answer_document,documents,llm_type,model_name,reponse_doc_list)
+        
+    
+    def _format_answer_document(self,doc:Document,llm_type,model_name,reponse_doc_list:List):
+        '''
+        llm or rag generator answer
+        '''
+        if doc.page_content is None or not doc.page_content.strip():
+            reponse_doc_list=[]
+        try:
+            answer,a_tokens = model_generate_a_document(doc.metadata['input'],doc.metadata['context'],llm_type=llm_type,model_name=model_name,document_language="Chinese")
+            answer_dict = self._split_extract_qa_with_regex(answer)
+            if answer_dict:
+                for data in answer_dict:
+                    doc.metadata["output"] = data['Answer']
+                    doc.metadata["a_llm_client"] = llm_type
+                    doc.metadata["a_model_name"] = model_name
+                    doc.metadata["total_tokens"] = doc.metadata["total_tokens"]+a_tokens
+                    reponse_doc_list.append(doc)
+        except Exception as e:
+            loguru.logger.exception(e)
+                
+    def save_sft_dataset_instruction_format(self,docs:List[Document],save_datasets_path:str):
+        '''
+        instruction:
+        input:
+        output:
+        '''
+        with open(save_datasets_path,"w",encoding="utf-8") as file:
+            for doc in docs:
+                doc.metadata['content'] =doc.page_content 
+                file.write(json.dumps(doc.metadata, ensure_ascii=False) + "\n")
+        
+    def save_sft_dataset_swift_format(self):
+        '''
+        system:
+        query:
+        answer:
+        '''
+        pass 
+    
+    def _format_question_document(self,doc:Document,llm_type,model_name,reponse_doc_list:List):
+        if doc.page_content is None or not doc.page_content.strip():
+            reponse_doc_list=[]
+        try:
+            reponse,tokens = model_generate_q_document(doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
+            q_reponse = self._split_extract_questions(reponse)
+            if q_reponse:
+                for question in q_reponse:
+                    metadata = {
+                       "input": question,
+                       "q_llm_client":llm_type,
+                       "q_model_name":model_name,
+                       "total_tokens":tokens
+                    }
+                    q_doc = Document(
+                        page_content=doc.page_content,
+                        metadata=metadata                       
+                    )
+                    reponse_doc_list.append(q_doc)
+        except Exception as e:
+            loguru.logger.exception(e)
+    def _split_extract_questions(self,text:str):
+        questions = []
+        lines = text.split('\n')
+        for line in lines:
+            if line.startswith('Question:'):
+                questions.append(line[len('Question: '):])
+        return questions
+    
+    def _split_extract_qa_with_regex(self,text:str):
+        # 正则表达式匹配Question和Answer块
+        pattern = r'Question: (.*?)\n\nAnswer: (.*?)(?=\n\nQuestion: |\Z)'
+        matches = re.findall(pattern, text, re.DOTALL)
+        qa_pairs = [{"Question":match[0].strip(), "Answer":match[1].strip()} for match in matches]
+        return qa_pairs
+
+# def extract_questions_re(text):
+#     # 使用正则表达式匹配以"Question:"开头的句子
+#     questions = re.findall(r'Question:\s*(.*?)(?=\nQuestion:|$)', text, re.DOTALL)
+#     return [question.strip() for question in questions]
+
+
+# def test_execute_text_sft_dataset():
+#     file_path = "data/《中华人民共和国安全生产法》（2021 年修订版）.pdf"
+#     file_path_md = "data/test_readme.md"
+#     file_path_md = "data/pdf_markdown/GB50205-2001 钢结构工程施工质量验收规范.md"
+#     file_path_tex = "data/《砌体结构工程施工质量验收规范_GB50203-2011》.tex"
+#     ##有问题
+#     etltype = "localhost"
+#     file_path_doc = "data/《起重设备安装工程施工及验收标准》（征求意见稿）.doc"
+#     file_name = Path(file_path_md)
+#     text_sft_dataset = TextSFTDatasets(file_path_md)
+#     all_docs = text_sft_dataset.extract_text(etltype)
+#     llm_type="openrouter"
+#     model_name="anthropic/claude-3.5-sonnet"
+#     q_reponse_list = []
+#     loguru.logger.info(f"chunk text {len(all_docs)}")
+#     for doc in all_docs[20:30]:
+#         loguru.logger.info(f"doc:{doc}")
+#         q_reponse = []
+#         if len(doc.page_content) >50:
+#             reponse,tokens = model_generate_q_document(doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
+#             q_reponse = extract_questions(reponse)
+#             if q_reponse:
+#                 for question in q_reponse:
+#                     data_dict = DatasetsTextSFTFormat()
+#                     answer,a_tokens = model_generate_a_document(question,doc.page_content,llm_type=llm_type,model_name=model_name,document_language="Chinese")
+#                     answer_dict = extract_qa_with_regex(answer)
+#                     if answer_dict:
+#                         for data in answer_dict:
+#                             data_dict.input = data['Question']
+#                             data_dict.output = data['Answer']
+#                         data_dict.llm_client = llm_type
+#                         data_dict.model_name = model_name
+#                         data_dict.context = doc.page_content
+#                         data_dict.total_tokens = tokens +a_tokens
+#                         q_reponse_list.append(data_dict.to_dict())
+#     loguru.logger.info(f"response:{len(q_reponse_list)}")
+#     save_file = "data/handbook_" +file_name.stem +"_.json"
+#     with open(save_file,"w",encoding="utf-8") as file:
+#         for line in q_reponse_list:
+#             file.write(json.dumps(line, ensure_ascii=False) + "\n")
+     
+def table_to_generator_question():
     "抽取deepdoc中table信息"
     tables_images_save = "datasets/tables_images_save/"
     json_files = get_directory_all_json_files(tables_images_save)
-    llm_type="openrouter"
-    model_name="openai/gpt-4o-mini-2024-07-18"
+    llm_type="localhost"
+    model_name="Qwen2.5-72B-Instruct-AWQ"
     for file in tqdm(json_files):
         file_path = Path(file)
         save_file = "data/table_data_sft/handbook_table_sft_" +file_path.stem +"_.json"
         if not os.path.exists(save_file):
-            q_reponse_list = []
             loguru.logger.info(f"tex_file_name:{save_file}")
-            execute_generator_question(file,q_reponse_list,llm_type,model_name)
-            loguru.logger.info(f"response:{len(q_reponse_list)}")
-            with open(save_file,"w",encoding="utf-8") as file:
-                for line in q_reponse_list:
-                    file.write(json.dumps(line, ensure_ascii=False) + "\n")
+            text_sft_dataset = TextSFTDatasets(file)
+            docs = text_sft_dataset.table_json_data_to_document()
+            loguru.logger.info(f"docs: {len(docs)}")
+            reponse_question_list = []
+            text_sft_dataset.question_document(docs,llm_type,model_name,reponse_question_list)
+            loguru.logger.info(f"reponse_question_list: {len(reponse_question_list)}")
+            text_sft_dataset.save_sft_dataset_instruction_format(reponse_question_list,save_file)
         else:
             loguru.logger.info(f"{save_file} file is exist")
+            
+def table_to_generator_answer():
+    tables_images_save = "datasets/tables_images_save/"
+    json_files = get_directory_all_json_files(tables_images_save)
+    pass
 
 
 def execute_text_sft_dataset():
