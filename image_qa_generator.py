@@ -7,11 +7,11 @@ import timeit
 from json_repair import repair_json
 import loguru
 
-from models.llm import LLMApi, model_image_table_format_execute
-from prompt.prompt import QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT, STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
+from models.llm import LLMApi, model_image_execute, model_image_table_format_execute
+from prompt.prompt import PDF_PAGE_TO_MARKDOWN_PROMPT, QUALITY_MAIN_STRUCTURE_PROMOPT_LABEL_UPDATE, STARCHAT_QS_ANSWER_GENERATOR_RPROMOPT, STARCHAT_QS_QUESTION_GENERATOR_RPROMOPT
 from tqdm import tqdm
 
-from utils.helper import MeasureExecutionTime, llm_result_postprocess, write_json_file_line
+from utils.helper import MeasureExecutionTime, llm_result_postprocess, pdf_file_image, pdf_image_to_base64, write_json_file_line
 
 
 def analyse_current_image_risk_labels(_data):
@@ -131,4 +131,23 @@ def execute_image_qa_generator():
     model_name="intern_vl"
     save_file_name = "data/images_randow_sample_label_quality_" + str(81819) +"_" + model_name.replace("/", "-")+ ".json"
     image_generator_conversation_index(json_file_path,llm_type,model_name,save_file_name)
+    
+def test_execute_image_pdf_to_markdown():
+    pdf_file = "datasets/《建筑工程施工质量验收统一标准_GB50300-2013》.pdf"
+    prompt = PDF_PAGE_TO_MARKDOWN_PROMPT.replace("{language}","Chinese")
+    llm_type = "openrouter"
+    model_name = "qwen/qwen-2-vl-72b-instruct"
+    pdf_image = pdf_file_image(pdf_file)
+    markdown_content_list = []
+    for index,image in tqdm(pdf_image[10:15]):
+        base64_image = pdf_image_to_base64(image)
+        response = model_image_execute(base64_image,prompt,llm_type,model_name)
+        response_dict = llm_result_postprocess(response['content'])
+        if isinstance(response_dict,dict) and "markdown" in response_dict:
+            markdown_text = response_dict['markdown']
+            markdown_content_list.append(markdown_text)
+    markdonw_content = "\n".join(markdown_content_list)
+    save_markdonw_file = "data/" + "test_vlm_pdf_to_markdown" +".md"
+    with open(save_markdonw_file,"w",encoding="utf-8") as file:
+            file.write(markdonw_content)    
 

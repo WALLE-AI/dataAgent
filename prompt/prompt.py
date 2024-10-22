@@ -111,6 +111,16 @@ Given text:
 Please generate question-answer pairs based on this text.
 """
 
+PDF_PAGE_TO_MARKDOWN_PROMPT = """
+Convert the following PDF page to markdown.
+Return only the markdown with no explanation text.
+Do not exclude any content from the page. 
+Please generate content in the following json format
+{
+    "markdown":xxxx
+}
+
+"""
 
 
 GENERATOR_ANSWER_PROMPT_EN_2 = '''

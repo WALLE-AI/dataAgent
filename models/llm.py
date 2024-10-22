@@ -241,3 +241,9 @@ def model_image_table_format_execute(data_dict, prompt,llm_type,model_name):
     llm_result_dict['total_tokens'] =LLMApi._get_num_tokens_by_gpt2(prompt)+llm_result_dict['total_tokens']
     return llm_result_dict
 
+def model_image_execute(image_base64_or_oss:str,prompt,llm_type,model_name):
+    build_prompt = LLMApi.build_image_prompt(prompt,image_base64_or_oss)
+    llm_result_dict = LLMApi.call_llm(build_prompt,llm_type=llm_type,model_name=model_name)
+    llm_result_dict['prompt']=prompt
+    llm_result_dict['total_tokens'] =LLMApi._get_num_tokens_by_gpt2(prompt)+llm_result_dict['total_tokens']
+    return llm_result_dict

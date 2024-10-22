@@ -152,6 +152,12 @@ def write_json_file_line(data_dict, save_file_name):
         for line in data_dict:
             file.write(json.dumps(line, ensure_ascii=False)+"\n")
          
+def pdf_image_to_base64(img):
+    buffered = BytesIO()
+    mime_type = "png"
+    img.save(buffered, format=mime_type)
+    img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    return f'data:image/{mime_type};base64,{img_base64}'
          
 def write_json_file(data_dict, save_file_name):
     jsonn_str_data = json.dumps(data_dict, ensure_ascii=False)
