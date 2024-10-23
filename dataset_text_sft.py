@@ -22,7 +22,7 @@ from parser.pdf_extractor import PdfExtractor
 from parser.splitter.fixed_text_splitter import FixedRecursiveCharacterTextSplitter
 from parser.vision.utils.utils import get_directory_all_pdf_files, get_directory_all_tex_files
 from prompt.prompt import GENERATOR_QA_PROMPT_EN, GENERATOR_QA_PROMPT_ZH, GENERATOR_QA_PROMPT_ZH_1, GENERATOR_QA_PROMPT_ZH_2
-from utils.helper import generate_text_hash, get_directory_all_json_files, write_json_file_line
+from utils.helper import generate_text_hash, get_directory_all_json_files, get_directory_all_markdown_files, write_json_file_line
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -389,6 +389,32 @@ def table_to_generator_question():
             text_sft_dataset.save_sft_dataset_instruction_format(reponse_question_list,save_file)
         else:
             loguru.logger.info(f"{save_file} file is exist")
+            
+            
+def markdown_to_generator_question():
+    "抽取deepdoc中table信息"
+    tables_images_save = "data/markdown/"
+    json_files = get_directory_all_markdown_files(tables_images_save)
+    llm_type="localhost"
+    model_name="Qwen2.5-72B-Instruct-AWQ"
+    etl_type = "localhost"
+    for file in tqdm(json_files):
+        file_name = Path(file).stem.split("_")[-1]
+        save_file = "data/markdown_data_sft/handbook_markdown_sft_" +file_name +".json"
+        if not os.path.exists(save_file):
+            loguru.logger.info(f"tex_file_name:{save_file}")
+            text_sft_dataset = TextSFTDatasets(file)
+            docs = text_sft_dataset.extract_text(etl_type)
+            if len(docs) >10:
+                ##过滤前10 chunk
+                docs = docs[10:]
+            loguru.logger.info(f"docs: {len(docs)}")
+            reponse_question_list = []
+            text_sft_dataset.question_document(docs,llm_type,model_name,reponse_question_list)
+            loguru.logger.info(f"reponse_question_list: {len(reponse_question_list)}")
+            text_sft_dataset.save_sft_dataset_instruction_format(reponse_question_list,save_file)
+        else:
+            loguru.logger.info(f"{save_file} file is exist") 
             
 def table_to_generator_answer():
     tables_images_save = "datasets/tables_images_save/"
