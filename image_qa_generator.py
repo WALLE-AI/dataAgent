@@ -132,7 +132,10 @@ def execute_image_qa_generator():
     save_file_name = "data/images_randow_sample_label_quality_" + str(81819) +"_" + model_name.replace("/", "-")+ ".json"
     image_generator_conversation_index(json_file_path,llm_type,model_name,save_file_name)
     
+<<<<<<< HEAD
     
+=======
+>>>>>>> 7e711d9c86a9d4afa32f8330c36e6ca874819877
 def test_execute_image_pdf_to_markdown():
     pdf_file = "datasets/《建筑工程施工质量验收统一标准_GB50300-2013》.pdf"
     prompt = PDF_PAGE_TO_MARKDOWN_PROMPT.replace("{language}","Chinese")
@@ -150,7 +153,11 @@ def test_execute_image_pdf_to_markdown():
     markdonw_content = "\n".join(markdown_content_list)
     save_markdonw_file = "data/" + "test_vlm_pdf_to_markdown" +".md"
     with open(save_markdonw_file,"w",encoding="utf-8") as file:
+<<<<<<< HEAD
             file.write(markdonw_content)        
     
     
+=======
+            file.write(markdonw_content)    
+>>>>>>> 7e711d9c86a9d4afa32f8330c36e6ca874819877
 

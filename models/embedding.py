@@ -113,6 +113,13 @@ class FlagEmbeddingInference(Embeddings):
         self._init_model()
         
     def _init_model(self):
+        ##https://huggingface.co/BAAI/bge-en-icl 看看怎么集成
+        '''
+        model = FlagICLModel('BAAI/bge-en-icl', 
+                     query_instruction_for_retrieval="Given a web search query, retrieve relevant passages that answer the query.",
+                     examples_for_task=examples,  # set `examples_for_task=None` to use model without examples
+                     use_fp16=True)
+        ''' 
         from FlagEmbedding import FlagModel
         import torch
         try:

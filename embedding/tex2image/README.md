@@ -6,3 +6,4 @@
 * https://github.com/adithya-s-k/VARAG
 * https://adithya-s-k.github.io/VARAG/
 * https://github.com/PromtEngineer/localGPT-Vision.git
+* https://github.com/OpenBMB/VisRAG
