@@ -8,5 +8,5 @@ if __name__ == "__main__":
     # late_main_context()
     text = "hello world"
     text_list =["sdadsadsa","hello world"]
-    embedding_result = EmbeddingModel.get_embedding("fastembed").embed_documents(text_list)
+    embedding_result = EmbeddingModel.get_embedding("tig_embedding_api").aembed_documents(text_list)
     loguru.logger.info(f"embedding {embedding_result}")

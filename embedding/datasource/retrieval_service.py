@@ -136,8 +136,8 @@ class RetrievalService:
 
             if documents:
                 if reranking_model:
-                    reranker_reponse = RankerApi.async_reranker_documents(query,documents)
-                    all_documents.append(reranker_reponse)
+                    reranker_docs = RankerApi.async_reranker_documents(query,documents)
+                    all_documents.extend(reranker_docs)
                 else:
                     all_documents.extend(documents)
         except Exception as e:

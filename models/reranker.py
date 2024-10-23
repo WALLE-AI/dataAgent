@@ -45,7 +45,19 @@ class RankerApi():
         embedding_list = cls()._reranker(query,recall_doc)
         return embedding_list
     @classmethod
-    def async_reranker_documents(cls,query,recall_doc_list:List[Document]):
+    def async_reranker_documents(cls,query,recall_doc_list:List[Document])->List[Document]:
         recall_doc = [recall_doc.page_content for recall_doc in recall_doc_list]
-        embedding_list = asyncio.run(cls().asyc_reranker(query,recall_doc))
-        return embedding_list
+        rerank_result = asyncio.run(cls().asyc_reranker(query,recall_doc))
+        rerank_list_docs = []
+        if isinstance(rerank_result,dict):
+            reranker_doc = recall_doc_list[rerank_result["index"]]
+            reranker_doc.metadata["index"] =rerank_result["index"]
+            reranker_doc.metadata["score"] =rerank_result["score"]
+            rerank_list_docs.append(reranker_doc)
+        if isinstance(rerank_result,list):
+            for doc in rerank_result:
+                reranker_doc = recall_doc_list[doc["index"]]
+                reranker_doc.metadata["index"] =doc["index"]
+                reranker_doc.metadata["score"] =doc["score"]
+                rerank_list_docs.append(reranker_doc)
+        return rerank_list_docs

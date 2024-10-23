@@ -48,14 +48,14 @@ class Vector:
 
     def create(self, texts: Optional[list] = None, **kwargs):
         if texts:
-            embeddings = self._embeddings.asyc_embed_documents([document.page_content for document in texts])
+            embeddings = self._embeddings.aembed_documents([document.page_content for document in texts])
             self._vector_processor.create(texts=texts, embeddings=embeddings, **kwargs)
 
     def add_texts(self, documents: list[Document], **kwargs):
         if kwargs.get("duplicate_check", False):
             documents = self._filter_duplicate_texts(documents)
 
-        embeddings = self._embeddings.asyc_embed_documents([document.page_content for document in documents])
+        embeddings = self._embeddings.aembed_documents([document.page_content for document in documents])
         self._vector_processor.create(texts=documents, embeddings=embeddings, **kwargs)
 
     def text_exists(self, id: str) -> bool:
@@ -68,7 +68,7 @@ class Vector:
         self._vector_processor.delete_by_metadata_field(key, value)
 
     def search_by_vector(self, query: str, **kwargs: Any) -> list[Document]:
-        query_vector = self._embeddings.asyc_embed_query(query)
+        query_vector = self._embeddings.aembed_query(query)
         return self._vector_processor.search_by_vector(query_vector, **kwargs)
 
     def search_by_full_text(self, query: str, **kwargs: Any) -> list[Document]:
@@ -82,9 +82,10 @@ class Vector:
         #     redis_client.delete(collection_exist_cache_key)
 
     def _get_embeddings(self) -> Embeddings:
-        ##TODO:缓存embedding的数据便于重复查询
-        from models.embedding import EmbeddingApi
-        return EmbeddingApi
+        ##TODO:缓存embedding的数据便于重复查询,需要把inference_embedding_type ep
+        inference_embedding_type = "tig_embedding_api"
+        from models.embedding import EmbeddingModel
+        return EmbeddingModel.get_embedding(inference_embedding_type)
 
     def _filter_duplicate_texts(self, texts: list[Document]) -> list[Document]:
         for text in texts.copy():

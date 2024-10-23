@@ -74,6 +74,11 @@ def get_directory_all_json_files(tex_directory_path):
     return tex_files
 
 
+def get_directory_all_markdown_files(tex_directory_path):
+    tex_files = [tex_directory_path + file for file in os.listdir(tex_directory_path) if file.endswith(".md")]
+    return tex_files
+
+
 
 def generate_text_hash(text: str) -> str:
     hash_text = str(text) + "None"
